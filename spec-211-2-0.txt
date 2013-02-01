@@ -30,6 +30,8 @@ Roozbeh Zareian <rz1511@ic.ac.uk>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+3 files modified: thread.h, thread.c, timer.c
+
 thread.h:	
   Added to struct thread
     int64_t sleepTime; //This holds the 'tick' time which
@@ -42,14 +44,20 @@ thread.h:
                                  //put the sleeping thread to ready list.
   
 thread.c:
-  Implement thread_addToSleep() and thread_checkSleep()
-
   Added list:
     static struct list sleeping_list //List of all sleeping threads
 
   Added to thread_init()
     list_init(&sleeping_list) //init the sleeping list
+
+  Added to init_thread()
+    t->sleepTime = 0; //init the sleep time
   
+  Added to top of schedule()
+    thread_checkSleep(); //check if there's any thread should be woken up
+  
+  Implement thread_addToSleep() and thread_checkSleep() (will explain in ALGORITHMS part)
+
 timer.c:
   Changed the timer_sleep() method
     void timer_sleep(int64_t ticks) {
@@ -65,8 +73,18 @@ timer.c:
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
+When timer_sleep() is called, the current thread's sleep time is set to current time + time to sleep,
+and it's added to the Sleeping List.
+
+Now the CPU can go on and do whatever. The sleeping list is only needed again after a call on schedule().
+
+When schedule() is called, the first thing it does is to check if a sleeping thread has 'slept' enough and wake it up.
+
+
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
+
+
 
 ---- SYNCHRONIZATION ----
 
