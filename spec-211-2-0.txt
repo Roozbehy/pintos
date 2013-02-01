@@ -7,10 +7,10 @@
 ---- GROUP ----
 
 >> Fill in the names and email addresses of your group members.
-
-FirstName LastName <email@domain.example>
-FirstName LastName <email@domain.example>
-FirstName LastName <email@domain.example>
+dn1111, nl1010, rz1511
+Duc Ngo <dn1111@ic.ac.uk>
+Yan Lu <nl1010@ic.ac.uk>
+Roozbeh Zareian <rz1511@ic.ac.uk>
 
 ---- PRELIMINARIES ----
 
@@ -57,7 +57,7 @@ timer.c:
       struct thread *t = thread_current();
       t->sleepTime = timer_ticks() + ticks();
       thread_addToSleep();
-      intr_set_level(old_level);
+      //intr_set_level(old_level);
     {
 
 ---- ALGORITHMS ----
