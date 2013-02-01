@@ -112,6 +112,8 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
     
+    //For Alarm clock, holds the time to wake up
+    int64_t sleepTime;    
   };
 
 /* If false (default), use round-robin scheduler.
@@ -149,5 +151,9 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
+//Alarm clock
+void thread_addToSleep(void);
+void thread_checkSleep(void);
 
 #endif /* threads/thread.h */

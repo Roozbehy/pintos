@@ -71,6 +71,10 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+
+//ALARM CLOCK
+static struct list sleeping_list;
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -93,6 +97,9 @@ thread_init (void)
   lock_init (&tid_lock);//MUTEX
   list_init (&ready_list);
   list_init (&all_list);//all_list:  list of all processes stored.
+  
+  //sleeping list for alarm clock
+  list_init(&sleeping_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();//intial_thread is the subthread 
@@ -481,6 +488,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  
+  //init sleep time for alarm clock
+  t->sleepTime = 0;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -571,6 +581,9 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
+  //check if any thread should be woken up
+  thread_checkSleep();
+  
   struct thread *cur = running_thread ();//cur points to the thread which is currently using CPU
   struct thread *next = next_thread_to_run ();//MOST IMPORTANT PART:next points the next thread need to run , and then run it .
   struct thread *prev = NULL;
@@ -601,3 +614,32 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+
+
+//ALARM CLOCK HELPER METHODS
+void
+thread_addToSleep(void)
+{
+  struct thread *t = thread_current();
+  t->status = THREAD_BLOCKED;
+  list_push_back(&sleeping_list, &t->elem);
+  schedule();
+}
+
+void
+thread_checkSleep(void)
+{
+  struct list_elem *e;
+  for (e = list_begin(&sleeping_list); e != list_end(&sleeping_list); e = list_next(e))
+  {
+    struct thread *t = list_entry(e, struct thread, elem);
+    if (t->sleepTime <= timer_ticks())
+    {
+      e = (list_remove(&t->elem))->prev;
+      list_push_back(&ready_list, &t->elem);
+      t->status = THREAD_READY;
+      t->sleepTime = 0;
+    }
+  }
+}

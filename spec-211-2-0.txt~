@@ -64,7 +64,7 @@ timer.c:
       //int old_level = intr_disable();
       //ASSERT (intr_get_level () == INTR_ON);
       struct thread *t = thread_current();
-      t->sleepTime = timer_ticks() + ticks;
+      t->sleepTime = timer_ticks() + ticks();
       thread_addToSleep();
       //intr_set_level(old_level);
     {
