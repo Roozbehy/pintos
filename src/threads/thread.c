@@ -88,17 +88,18 @@ void
 thread_init (void) 
 {
   ASSERT (intr_get_level () == INTR_OFF);
+//'ASSERT' is program modification -- just ignore all of them 
 
-  lock_init (&tid_lock);
+  lock_init (&tid_lock);//MUTEX
   list_init (&ready_list);
-  list_init (&all_list);
+  list_init (&all_list);//all_list:  list of all processes stored.
 
   /* Set up a thread structure for the running thread. */
-  initial_thread = running_thread ();
-  init_thread (initial_thread, "main", PRI_DEFAULT);
-  initial_thread->status = THREAD_RUNNING;
-  initial_thread->tid = allocate_tid ();
-}
+  initial_thread = running_thread ();//intial_thread is the subthread 
+  init_thread (initial_thread, "main", PRI_DEFAULT);//defualt priority is 31(max is 61,min is 0)
+  initial_thread->status = THREAD_RUNNING;//make the thread status as 'running'
+  initial_thread->tid = allocate_tid ();//and give him a thread id
+}// after initialization , the thread whill be scheduled into CPU processing , by schedule() 
 
 /* Starts preemptive thread scheduling by enabling interrupts.
    Also creates the idle thread. */
@@ -218,14 +219,16 @@ thread_create (const char *name, int priority,
    This function must be called with interrupts turned off.  It
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
+
+//FAQ:why block method doesnt have inputs? -Ans:the only possible for thread to be blocked is this thread is currently running , thus , iff thread been blocked , this thread is currently running 
 void
 thread_block (void) 
 {
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
-  thread_current ()->status = THREAD_BLOCKED;
-  schedule ();
+  thread_current ()->status = THREAD_BLOCKED;//make current running thread status as blocked,by this action the current thread will stop using CPU 
+  schedule ();//let next thread to use the CPU
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -236,18 +239,25 @@ thread_block (void)
    be important: if the caller had disabled interrupts itself,
    it may expect that it can atomically unblock a thread and
    update other data. */
+
+//YAN: the function of this method acutally is put threat 't' into the readylist
 void
 thread_unblock (struct thread *t) 
 {
-  enum intr_level old_level;
-
+  enum intr_level old_level;//interrupt original level 
   ASSERT (is_thread (t));
 
-  old_level = intr_disable ();
+//---
+  old_level = intr_disable ();//intr_disable:/src/threads/interrupt.c . Function:disables interrupts and returns the previouse interrupt status, thus , old_level is the previouse interrupt status. (see lastline)
+//these 3 sentences above is normarly using together , means shut down the interrupt , ( to avoid interrupt by anything else when this thread is running)
+
+//=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
-  t->status = THREAD_READY;
-  intr_set_level (old_level);
+  list_push_back (&ready_list, &t->elem);//THIS IS THE KEY SENTENCE:add thread 't' to ready_list by using push back ;(pushback :inserts the element at the END of the list,so that it become the back in list)
+  t->status = THREAD_READY;//and set thread 't' status as READY
+//=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
+  intr_set_level (old_level);//resume previouse interrupt status
+//---
 }
 
 /* Returns the name of the running thread. */
@@ -498,10 +508,11 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void) 
 {
-  if (list_empty (&ready_list))
+  if (list_empty (&ready_list)) // if readylist is empty , then return the idle_thread (idle thread is a dead loop for keeping CPU's tempreture.
     return idle_thread;
-  else
+  else // if ready list is not empty,list modification is in src/lib/kernal/list.h and list.c
     return list_entry (list_pop_front (&ready_list), struct thread, elem);
+//list_pop_front: return the first element in the LIST ,return it , and delete it from the orginal LIST 
 }
 
 /* Completes a thread switch by activating the new thread's page
@@ -560,8 +571,8 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
-  struct thread *cur = running_thread ();
-  struct thread *next = next_thread_to_run ();
+  struct thread *cur = running_thread ();//cur points to the thread which is currently using CPU
+  struct thread *next = next_thread_to_run ();//MOST IMPORTANT PART:next points the next thread need to run , and then run it .
   struct thread *prev = NULL;
 
   ASSERT (intr_get_level () == INTR_OFF);
