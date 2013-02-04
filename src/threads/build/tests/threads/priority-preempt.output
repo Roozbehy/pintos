@@ -1,4 +1,4 @@
-qemu -hda /tmp/hB5pJgKNs0.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/yM4eICh2h9.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-preempt

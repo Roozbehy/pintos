@@ -84,7 +84,6 @@ The sleeping list is only needed again after a call on schedule().
 When schedule() is called, the first thing it does is to check if a sleeping thread has 'slept' enough and wake it up.
 
 //TODO: interrupt handling
-
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
 
@@ -92,14 +91,19 @@ When schedule() is called, the first thing it does is to check if a sleeping thr
 
 ---- SYNCHRONIZATION ----
 
+
+//TODO
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
+
+//TODO
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
 
 ---- RATIONALE ----
 
+//TODO
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
 
@@ -111,6 +115,13 @@ When schedule() is called, the first thing it does is to check if a sleeping thr
 >> B1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
+
+thread.c:
+
+thread_set_priority();
+thread_unblock();
+next_thread_to_run();
+
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a

@@ -1,0 +1,17 @@
+qemu -hda /tmp/UToa1KES8O.dsk -m 4 -net none -nographic -monitor null --no-kvm
+PiLo hda1
+Loading..........
+Kernel command line: -q run alarm-negative.
+Pintos booting with 4,096 kB RAM...
+383 pages available in kernel pool.
+383 pages available in user pool.
+Kernel PANIC at ../../threads/thread.c:621 in schedule(): assertion `is_thread (next)' failed.
+Call stack: 0xc002850e.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 0 ticks
+Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
+Console: 489 characters output
+Keyboard: 0 keys pressed
+Powering off...

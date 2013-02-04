@@ -260,8 +260,27 @@ thread_unblock (struct thread *t)
 
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);//THIS IS THE KEY SENTENCE:add thread 't' to ready_list by using push back ;(pushback :inserts the element at the END of the list,so that it become the back in list)
-  t->status = THREAD_READY;//and set thread 't' status as READY
+  
+  list_push_back (&ready_list, &t->elem); 
+  t->status = THREAD_READY;
+
+  if (!list_empty(&ready_list))
+  {
+    //go through ready list and find the thread with highest priority
+    int max_priority = 0;
+    struct list_elem *e;
+    for (e = list_begin (&ready_list); e != list_end (&ready_list);
+         e = list_next (e))
+    {
+      struct thread *t = list_entry(e, struct thread, allelem);
+      if (t->priority > max_priority)
+        max_priority = t->priority;
+    }
+
+    if (thread_current()->priority < max_priority)
+      thread_yield();
+  }
+
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
   intr_set_level (old_level);//resume previouse interrupt status
 //---
@@ -360,7 +379,24 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  struct thread *cur = thread_current();
+  cur->priority = new_priority;
+  if (!list_empty(&ready_list))
+  {
+    //go through ready list and find the thread with highest priority
+    int max_priority = 0;
+    struct list_elem *e;
+    for (e = list_begin (&ready_list); e != list_end (&ready_list);
+         e = list_next (e))
+    {
+      struct thread *t = list_entry(e, struct thread, allelem);
+      if (t->priority > max_priority)
+        max_priority = t->priority;
+    }
+
+    if (new_priority < max_priority)
+      thread_yield();
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -521,7 +557,21 @@ next_thread_to_run (void)
   if (list_empty (&ready_list)) // if readylist is empty , then return the idle_thread (idle thread is a dead loop for keeping CPU's tempreture.
     return idle_thread;
   else // if ready list is not empty,list modification is in src/lib/kernal/list.h and list.c
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  {
+    struct thread *result 
+      = list_entry(list_pop_front (&ready_list), struct thread, elem);
+    int max_priority = 0;
+    struct list_elem *e;
+    for (e = list_begin (&ready_list); e != list_end (&ready_list);
+         e = list_next (e))
+    {
+      struct thread *t = list_entry(e, struct thread, allelem);
+      if (t->priority > max_priority)
+        result = t;
+    }
+    return result;
+  }
+    //return list_entry (list_pop_front (&ready_list), struct thread, elem);
 //list_pop_front: return the first element in the LIST ,return it , and delete it from the orginal LIST 
 }
 
@@ -621,17 +671,23 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 void
 thread_addToSleep(void)
 {
-  struct thread *t = thread_current();
-  t->status = THREAD_BLOCKED;
-  list_push_back(&sleeping_list, &t->elem);
+  struct thread *cur = thread_current();
+  enum intr_level old_level;
+  old_level = intr_disable();
+
+  cur->status = THREAD_BLOCKED;
+  list_push_back(&sleeping_list, &cur->elem);
   schedule();
+
+  intr_set_level (old_level);
 }
 
 void
 thread_checkSleep(void)
 {
   struct list_elem *e;
-  for (e = list_begin(&sleeping_list); e != list_end(&sleeping_list); e = list_next(e))
+  for (e = list_begin(&sleeping_list); e != list_end(&sleeping_list); 
+       e = list_next(e))
   {
     struct thread *t = list_entry(e, struct thread, elem);
     if (t->sleepTime <= timer_ticks())

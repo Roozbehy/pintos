@@ -90,13 +90,12 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-  struct thread *thread = thread_current();
-  int old_level = intr_disable ();
+  struct thread *cur = thread_current();
 
-  //ASSERT (intr_get_level () == INTR_ON);
-  thread->sleepTime = start + ticks;
+  ASSERT (intr_get_level () == INTR_ON);
+  
+  cur->sleepTime = start + ticks;
   thread_addToSleep();
-  intr_set_level (old_level);
 
   //while (timer_elapsed (start) < ticks) 
   //  thread_yield ();

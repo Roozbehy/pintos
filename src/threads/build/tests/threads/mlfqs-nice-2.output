@@ -1,4 +1,4 @@
-qemu -hda /tmp/iYgiV0VB1B.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/WWb8OyiNMJ.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-nice-2
