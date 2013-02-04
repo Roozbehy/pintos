@@ -1,4 +1,4 @@
-qemu -hda /tmp/YAZC3jKw79.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/DG8eNGX67Z.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-recent-1
@@ -103,7 +103,7 @@ Executing 'mlfqs-recent-1':
 (mlfqs-recent-1) end
 Execution of 'mlfqs-recent-1' complete.
 Timer: 19001 ticks
-Thread: 0 idle ticks, 19001 kernel ticks, 0 user ticks
-Console: 7089 characters output
+Thread: 980 idle ticks, 18021 kernel ticks, 0 user ticks
+Console: 7091 characters output
 Keyboard: 0 keys pressed
 Powering off...

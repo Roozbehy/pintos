@@ -1,4 +1,4 @@
-qemu -hda /tmp/0RMnlbHc9u.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/9bEs35Xhou.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run alarm-negative

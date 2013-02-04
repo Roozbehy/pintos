@@ -1,4 +1,4 @@
-qemu -hda /tmp/lzJkgSCBFa.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/1j95qYqUYd.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-donate-sema
@@ -13,7 +13,7 @@ Executing 'priority-donate-sema':
 (priority-donate-sema) end
 Execution of 'priority-donate-sema' complete.
 Timer: 21 ticks
-Thread: 0 idle ticks, 22 kernel ticks, 0 user ticks
+Thread: 0 idle ticks, 21 kernel ticks, 0 user ticks
 Console: 462 characters output
 Keyboard: 0 keys pressed
 Powering off...

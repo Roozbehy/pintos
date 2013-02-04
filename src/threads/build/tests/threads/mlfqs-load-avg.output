@@ -1,4 +1,4 @@
-qemu -hda /tmp/W5BRDnZR_e.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/pUL5jJRIJa.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-load-avg
@@ -104,7 +104,7 @@ Executing 'mlfqs-load-avg':
 (mlfqs-load-avg) end
 Execution of 'mlfqs-load-avg' complete.
 Timer: 18821 ticks
-Thread: 0 idle ticks, 18821 kernel ticks, 0 user ticks
-Console: 5390 characters output
+Thread: 6899 idle ticks, 11922 kernel ticks, 0 user ticks
+Console: 5393 characters output
 Keyboard: 0 keys pressed
 Powering off...

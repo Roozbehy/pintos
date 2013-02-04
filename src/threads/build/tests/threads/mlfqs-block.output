@@ -1,4 +1,4 @@
-qemu -hda /tmp/p0LYJwh39Y.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/vx2NB2tRZJ.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-block
@@ -18,8 +18,8 @@ Executing 'mlfqs-block':
 (mlfqs-block) Block thread should have already acquired lock.
 (mlfqs-block) end
 Execution of 'mlfqs-block' complete.
-Timer: 3021 ticks
-Thread: 0 idle ticks, 3021 kernel ticks, 0 user ticks
-Console: 752 characters output
+Timer: 3022 ticks
+Thread: 500 idle ticks, 2522 kernel ticks, 0 user ticks
+Console: 754 characters output
 Keyboard: 0 keys pressed
 Powering off...
