@@ -325,9 +325,7 @@ thread_current (void)
      of stack, so a few big automatic arrays or moderate
      recursion can cause stack overflow. */
   ASSERT (is_thread (t));
-
-  //In case the thread is created then change priority right away
-  //ASSERT (t->status == THREAD_RUNNING);
+  ASSERT (t->status == THREAD_RUNNING);
 
   return t;
 }
@@ -404,12 +402,11 @@ void
 thread_set_priority (int new_priority) 
 {
   struct thread *cur = thread_current();
-  int old_level = intr_disable();
-  
   cur->priority = new_priority;
+  cur->old_priority = new_priority;
 
-  if (!list_empty(&ready_list))
-  {
+  //if (!list_empty(&ready_list))
+  //{
     //If highest priority thread in ready_list has higher priority than 
     //current running thread, yield it
     struct list_elem *e = list_head(&ready_list);
@@ -417,9 +414,7 @@ thread_set_priority (int new_priority)
     
     if (cur->priority < max_priority)
       thread_yield();
-  }
-  
-  intr_set_level(old_level);
+  //}
 }
 
 /* Returns the current thread's priority. */
