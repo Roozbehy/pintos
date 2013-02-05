@@ -217,6 +217,9 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  //Check if there is higher priority thread in ready_list
+  //thread_yield();
+
   return tid;
 }
 
@@ -248,6 +251,19 @@ thread_block (void)
    update other data. */
 
 //YAN: the function of this method acutally is put threat 't' into the readylist
+
+
+//For sorting the list
+bool
+higher_priority(const struct list_elem *elem1, const struct list_elem *elem2,
+                void *aux)
+{
+  struct thread *t1, *t2;
+  t1 = list_entry(elem1, struct thread , elem);
+  t2 = list_entry(elem2, struct thread , elem);
+  return (t1->priority > t2->priority);
+}
+
 void
 thread_unblock (struct thread *t) 
 {
@@ -261,26 +277,26 @@ thread_unblock (struct thread *t)
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
   ASSERT (t->status == THREAD_BLOCKED);
   
-  list_push_back (&ready_list, &t->elem); 
+  //insert the list to the new ready_list
+  //new ready_list is an ordered list of thread, ordered by priority
+  list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);
+
   t->status = THREAD_READY;
 
+  //CHeck to see if this thread has highest priority (or any other threads in readylist)
   if (!list_empty(&ready_list))
   {
-    //go through ready list and find the thread with highest priority
-    int max_priority = 0;
-    struct list_elem *e;
-    for (e = list_begin (&ready_list); e != list_end (&ready_list);
-         e = list_next (e))
-    {
-      struct thread *t = list_entry(e, struct thread, allelem);
-      if (t->priority > max_priority)
-        max_priority = t->priority;
-    }
-
+    struct list_elem *e = list_head(&ready_list);
+    int max_priority = list_entry(e, struct thread, elem)->priority;
+   
     if (thread_current()->priority < max_priority)
-      thread_yield();
+    {
+      if (intr_context())
+        intr_yield_on_return();
+      else
+        thread_yield();
+    }
   }
-
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
   intr_set_level (old_level);//resume previouse interrupt status
 //---
@@ -307,7 +323,9 @@ thread_current (void)
      of stack, so a few big automatic arrays or moderate
      recursion can cause stack overflow. */
   ASSERT (is_thread (t));
-  ASSERT (t->status == THREAD_RUNNING);
+
+  //In case the thread is created then change priority right away
+  //ASSERT (t->status == THREAD_RUNNING);
 
   return t;
 }
@@ -351,9 +369,13 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+
+  //change from push_back to insert_ordered
+  if (cur != idle_thread)
+    list_insert_ordered(&ready_list, &cur->elem, higher_priority, NULL);
+
   cur->status = THREAD_READY;
+
   schedule ();
   intr_set_level (old_level);
 }
@@ -380,23 +402,22 @@ void
 thread_set_priority (int new_priority) 
 {
   struct thread *cur = thread_current();
+  int old_level = intr_disable();
+  
   cur->priority = new_priority;
+
   if (!list_empty(&ready_list))
   {
-    //go through ready list and find the thread with highest priority
-    int max_priority = 0;
-    struct list_elem *e;
-    for (e = list_begin (&ready_list); e != list_end (&ready_list);
-         e = list_next (e))
-    {
-      struct thread *t = list_entry(e, struct thread, allelem);
-      if (t->priority > max_priority)
-        max_priority = t->priority;
-    }
-
-    if (new_priority < max_priority)
+    //If highest priority thread in ready_list has higher priority than 
+    //current running thread, yield it
+    struct list_elem *e = list_head(&ready_list);
+    int max_priority = list_entry(e, struct thread, elem)->priority;
+    
+    if (cur->priority < max_priority)
       thread_yield();
   }
+  
+  intr_set_level(old_level);
 }
 
 /* Returns the current thread's priority. */
@@ -558,18 +579,7 @@ next_thread_to_run (void)
     return idle_thread;
   else // if ready list is not empty,list modification is in src/lib/kernal/list.h and list.c
   {
-    struct thread *result 
-      = list_entry(list_pop_front (&ready_list), struct thread, elem);
-    int max_priority = 0;
-    struct list_elem *e;
-    for (e = list_begin (&ready_list); e != list_end (&ready_list);
-         e = list_next (e))
-    {
-      struct thread *t = list_entry(e, struct thread, allelem);
-      if (t->priority > max_priority)
-        result = t;
-    }
-    return result;
+    return list_entry(list_pop_front (&ready_list), struct thread, elem);
   }
     //return list_entry (list_pop_front (&ready_list), struct thread, elem);
 //list_pop_front: return the first element in the LIST ,return it , and delete it from the orginal LIST 
@@ -693,7 +703,8 @@ thread_checkSleep(void)
     if (t->sleepTime <= timer_ticks())
     {
       e = (list_remove(&t->elem))->prev;
-      list_push_back(&ready_list, &t->elem);
+      list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);
+
       t->status = THREAD_READY;
       t->sleepTime = 0;
     }

@@ -1,4 +1,4 @@
-qemu -hda /tmp/whswOVyS5G.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/QdH10OnEea.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-recent-1

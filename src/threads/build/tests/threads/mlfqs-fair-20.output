@@ -1,4 +1,4 @@
-qemu -hda /tmp/QLhZcgNx_4.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/fh4y470TLz.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-fair-20
@@ -15,27 +15,27 @@ Executing 'mlfqs-fair-20':
 (mlfqs-fair-20) Thread 0 received 153 ticks.
 (mlfqs-fair-20) Thread 1 received 153 ticks.
 (mlfqs-fair-20) Thread 2 received 153 ticks.
-(mlfqs-fair-20) Thread 3 received 153 ticks.
+(mlfqs-fair-20) Thread 3 received 152 ticks.
 (mlfqs-fair-20) Thread 4 received 153 ticks.
 (mlfqs-fair-20) Thread 5 received 153 ticks.
 (mlfqs-fair-20) Thread 6 received 152 ticks.
-(mlfqs-fair-20) Thread 7 received 152 ticks.
+(mlfqs-fair-20) Thread 7 received 153 ticks.
 (mlfqs-fair-20) Thread 8 received 152 ticks.
 (mlfqs-fair-20) Thread 9 received 152 ticks.
-(mlfqs-fair-20) Thread 10 received 149 ticks.
-(mlfqs-fair-20) Thread 11 received 148 ticks.
-(mlfqs-fair-20) Thread 12 received 149 ticks.
+(mlfqs-fair-20) Thread 10 received 148 ticks.
+(mlfqs-fair-20) Thread 11 received 149 ticks.
+(mlfqs-fair-20) Thread 12 received 148 ticks.
 (mlfqs-fair-20) Thread 13 received 148 ticks.
-(mlfqs-fair-20) Thread 14 received 149 ticks.
+(mlfqs-fair-20) Thread 14 received 148 ticks.
 (mlfqs-fair-20) Thread 15 received 149 ticks.
 (mlfqs-fair-20) Thread 16 received 149 ticks.
-(mlfqs-fair-20) Thread 17 received 149 ticks.
-(mlfqs-fair-20) Thread 18 received 149 ticks.
-(mlfqs-fair-20) Thread 19 received 148 ticks.
+(mlfqs-fair-20) Thread 17 received 148 ticks.
+(mlfqs-fair-20) Thread 18 received 148 ticks.
+(mlfqs-fair-20) Thread 19 received 149 ticks.
 (mlfqs-fair-20) end
 Execution of 'mlfqs-fair-20' complete.
-Timer: 4023 ticks
-Thread: 999 idle ticks, 3024 kernel ticks, 0 user ticks
-Console: 1462 characters output
+Timer: 4025 ticks
+Thread: 1000 idle ticks, 3025 kernel ticks, 0 user ticks
+Console: 1463 characters output
 Keyboard: 0 keys pressed
 Powering off...
