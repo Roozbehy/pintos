@@ -217,8 +217,9 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-  //Check if there is higher priority thread in ready_list
-  //thread_yield();
+  //Do the switching here, not in unblock
+  if (thread_current()->priority < t->priority)
+    thread_yield();
 
   return tid;
 }
@@ -284,19 +285,20 @@ thread_unblock (struct thread *t)
   t->status = THREAD_READY;
 
   //CHeck to see if this thread has highest priority (or any other threads in readylist)
-  if (!list_empty(&ready_list))
+  /*if (!list_empty(&ready_list))
   {
     struct list_elem *e = list_head(&ready_list);
     int max_priority = list_entry(e, struct thread, elem)->priority;
    
-    if (thread_current()->priority < max_priority)
+    if ((thread_current()->priority < max_priority)
+        &&(thread_current()!=idle_thread))
     {
       if (intr_context())
         intr_yield_on_return();
       else
         thread_yield();
     }
-  }
+  }*/
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
   intr_set_level (old_level);//resume previouse interrupt status
 //---
@@ -578,9 +580,7 @@ next_thread_to_run (void)
   if (list_empty (&ready_list)) // if readylist is empty , then return the idle_thread (idle thread is a dead loop for keeping CPU's tempreture.
     return idle_thread;
   else // if ready list is not empty,list modification is in src/lib/kernal/list.h and list.c
-  {
     return list_entry(list_pop_front (&ready_list), struct thread, elem);
-  }
     //return list_entry (list_pop_front (&ready_list), struct thread, elem);
 //list_pop_front: return the first element in the LIST ,return it , and delete it from the orginal LIST 
 }
