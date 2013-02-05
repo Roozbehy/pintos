@@ -90,12 +90,11 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
 
 
-	//yan implementation is :
-	int old_priority ;
-	struct list locks;
-	bool donated;
-	struct lock *blocked;
-	//yan implementation	
+	/*yan dev */
+	int previous_priority ;	//if someone donate it's priority , it will change priority and it's previous priority will be stored here
+ 	//struct list locks;   //the locks of this thread holds
+	bool been_donated;		//1:been donated , 0:not been donated ,no history
+	struct lock *blocked;	//which lock it's waiting for
 
 
     int priority;                       /* Priority. */

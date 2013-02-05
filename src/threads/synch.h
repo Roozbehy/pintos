@@ -18,14 +18,14 @@ void sema_up (struct semaphore *);
 void sema_self_test (void);
 
 /* Lock. */
-struct lock 
+struct lock //donation function need lock
   {
     struct thread *holder;      /* Thread holding lock (for debugging). */
     struct semaphore semaphore; /* Binary semaphore controlling access. */
   };
 
-void lock_init (struct lock *);
-void lock_acquire (struct lock *);
+void lock_init (struct lock *);  //initialise the lock
+void lock_acquire (struct lock *);	//try to get this lock , if failed , thread sleep until this lock is available to fetch
 bool lock_try_acquire (struct lock *);
 void lock_release (struct lock *);
 bool lock_held_by_current_thread (const struct lock *);

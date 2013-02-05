@@ -248,6 +248,33 @@ thread_block (void)
    update other data. */
 
 //YAN: the function of this method acutally is put threat 't' into the readylist
+//void
+//thread_unblock (struct thread *t)
+//{
+//  enum intr_level old_level;//interrupt original level
+//  ASSERT (is_thread (t));
+//
+////---
+//  old_level = intr_disable ();//intr_disable:/src/threads/interrupt.c . Function:disables interrupts and returns the previouse interrupt status, thus , old_level is the previouse interrupt status. (see lastline)
+////these 3 sentences above is normarly using together , means shut down the interrupt , ( to avoid interrupt by anything else when this thread is running)
+//
+////=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
+//  ASSERT (t->status == THREAD_BLOCKED);
+//  list_push_back (&ready_list, &t->elem);//THIS IS THE KEY SENTENCE:add thread 't' to the TAIL of ready_list by using push back ;(pushback :inserts the element at the END of the list,so that it become the back in list)
+//  t->status = THREAD_READY;//and set thread 't' status as READY
+////=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
+//  intr_set_level (old_level);//resume previouse interrupt status
+////---
+//
+//
+////actually , it's called Atomic Manupilation , we can use
+////semaWait (semaphore s)
+//// -- atomic manupilation codes here (impossible to be interrupted or shared )
+////semaSignal (semaphore s)
+//
+//}
+
+/* yan's development */
 void
 thread_unblock (struct thread *t) 
 {
@@ -255,17 +282,28 @@ thread_unblock (struct thread *t)
   ASSERT (is_thread (t));
 
 //---
-  old_level = intr_disable ();//intr_disable:/src/threads/interrupt.c . Function:disables interrupts and returns the previouse interrupt status, thus , old_level is the previouse interrupt status. (see lastline)
-//these 3 sentences above is normarly using together , means shut down the interrupt , ( to avoid interrupt by anything else when this thread is running)
+  old_level = intr_disable ();
 
-//=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
+  //=========begin- atomic level============================
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);//THIS IS THE KEY SENTENCE:add thread 't' to ready_list by using push back ;(pushback :inserts the element at the END of the list,so that it become the back in list)
+  list_intsert_ordered (&ready_list,&t->elem,higher_priority,NULL); //ensure the ready_list in order according to it's priority not by FIFO
+  //<higher_priority> is a function ptr , and it is also a rule to be sort
   t->status = THREAD_READY;//and set thread 't' status as READY
-//=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
+//=========end- atomic level=============================
+
   intr_set_level (old_level);//resume previouse interrupt status
-//---
 }
+
+/* yan's function */
+bool
+higher_priority (const struct list_elem *elem1, const struct list_elem *elem2, void *aux){
+	struct thread *t1 , *t2;
+	t1 = list_entry(elem1,struct thread , elem);
+	t2 = list_entry(elem2,struct thread , elem);
+	return (t1->priority > t2->priority);
+}
+
+
 
 /* Returns the name of the running thread. */
 const char *
@@ -357,18 +395,67 @@ thread_foreach (thread_action_func *func, void *aux)
 }
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
+//void
+//thread_set_priority (int new_priority)
+//{
+//  thread_current ()->priority = new_priority;
+//}
+
+/* yan's dev */
 void
-thread_set_priority (int new_priority) 
-{
-  thread_current ()->priority = new_priority;
+thread_set_priority (int new_priority) {
+	struct thread *current = thread_current();
+	thread_set_priority_aux (current,new_priority);
 }
 
-/* Returns the current thread's priority. */
-int
-thread_get_priority (void) 
-{
-  return thread_current ()->priority;
+void
+thread_set_priority_aux (struct thread *current, int new_priority) {
+	if (current->been_donated){  //THREAD BEEN DONATED , in this situation donation function enabled
+		if (current->priority < new_priority ) {	//if current priority is LOWER than new one,
+			/*then set new priority to current priority */
+
+			//current->previous_priority = current->priority;  in not been donated situation already saved it . .
+			current->priority = new_priority;
+		}else {		//if current priority is HIGHER then the new one
+			/*which means,this thread is in the head of queue anyway ,
+			after using his higher&current priority , it should resume to the priority been donated */
+
+			current->previous_priority = new_priority;
+			//current->priority = current->priority; we don't need to put this code .
+		}
+	}else {  //THREAD NOT BEEN DONATED
+		/* in this situation donation function disabled ,
+		 we save previous_priority history as current as initialisation */
+
+		current->priority = new_priority;
+		current->previous_priority = current->priority;
+	}
+
+	//if current thread is running && it's priority is less , we yield it
+	if (list_entry(list_begin (&ready_list),struct thread,elem)->priority >= new_priority) {
+		thread_yield_head();
+	}
 }
+
+
+/* Returns the current thread's priority. */
+//int
+//thread_get_priority (void)
+//{
+//  return thread_current ()->priority;
+//}
+
+/*yan's dev */
+int
+thread_get_priority (void)
+{
+	struct thread *current = thread_current();
+	if (current->previous_priority > current->priority){
+		return current->previous_priority;
+	}else
+		return current->priority;
+}
+
 
 /* Sets the current thread's nice value to NICE. */
 void
@@ -585,7 +672,7 @@ schedule (void)
   thread_checkSleep();
   
   struct thread *cur = running_thread ();//cur points to the thread which is currently using CPU
-  struct thread *next = next_thread_to_run ();//MOST IMPORTANT PART:next points the next thread need to run , and then run it .
+  struct thread *next = next_thread_to_run ();//MOST IMPORTANT PART:next points the next thread need to run , and then run it . next_thread_to_run(), FIFO-readyList,fetch the first one and run it .
   struct thread *prev = NULL;
 
   ASSERT (intr_get_level () == INTR_OFF);
