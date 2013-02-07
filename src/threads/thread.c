@@ -20,6 +20,9 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
+//Alarm clock
+static struct list sleep_list;
+
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
@@ -71,10 +74,6 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
-
-//ALARM CLOCK
-static struct list sleeping_list;
-
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -93,13 +92,13 @@ thread_init (void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
 //'ASSERT' is program modification -- just ignore all of them 
-
+  
+  //init the sleep list
+  list_init(&sleep_list);
+  
   lock_init (&tid_lock);//MUTEX
   list_init (&ready_list);
   list_init (&all_list);//all_list:  list of all processes stored.
-  
-  //sleeping list for alarm clock
-  list_init(&sleeping_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();//intial_thread is the subthread 
@@ -217,10 +216,6 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-  //Do the switching here, not in unblock
-  if (thread_current()->priority < t->priority)
-    thread_yield();
-
   return tid;
 }
 
@@ -252,19 +247,6 @@ thread_block (void)
    update other data. */
 
 //YAN: the function of this method acutally is put threat 't' into the readylist
-
-
-//For sorting the list
-bool
-higher_priority(const struct list_elem *elem1, const struct list_elem *elem2,
-                void *aux)
-{
-  struct thread *t1, *t2;
-  t1 = list_entry(elem1, struct thread , elem);
-  t2 = list_entry(elem2, struct thread , elem);
-  return (t1->priority > t2->priority);
-}
-
 void
 thread_unblock (struct thread *t) 
 {
@@ -277,28 +259,23 @@ thread_unblock (struct thread *t)
 
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
   ASSERT (t->status == THREAD_BLOCKED);
-  
-  //insert the list to the new ready_list
-  //new ready_list is an ordered list of thread, ordered by priority
-  list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);
+  list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);//THIS IS THE KEY SENTENCE:add thread 't' to ready_list by using push back ;(pushback :inserts the element at the END of the list,so that it become the back in list)
+  t->status = THREAD_READY;//and set thread 't' status as READY
 
-  t->status = THREAD_READY;
-
-  //CHeck to see if this thread has highest priority (or any other threads in readylist)
-  /*if (!list_empty(&ready_list))
+  if (!list_empty(&ready_list))
   {
-    struct list_elem *e = list_head(&ready_list);
+    struct list_elem *e = list_max(&ready_list, higher_priority, NULL);
     int max_priority = list_entry(e, struct thread, elem)->priority;
-   
     if ((thread_current()->priority < max_priority)
-        &&(thread_current()!=idle_thread))
+        &&(thread_current() != idle_thread))
     {
       if (intr_context())
         intr_yield_on_return();
       else
         thread_yield();
     }
-  }*/
+  }
+
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
   intr_set_level (old_level);//resume previouse interrupt status
 //---
@@ -369,13 +346,9 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-
-  //change from push_back to insert_ordered
-  if (cur != idle_thread)
+  if (cur != idle_thread) 
     list_insert_ordered(&ready_list, &cur->elem, higher_priority, NULL);
-
   cur->status = THREAD_READY;
-
   schedule ();
   intr_set_level (old_level);
 }
@@ -401,18 +374,15 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current()->priority = new_priority;
-
-  //if (!list_empty(&ready_list))
-  //{
-    //If highest priority thread in ready_list has higher priority than 
-    //current running thread, yield it
-    struct list_elem *e = list_head(&ready_list);
+  struct thread *cur = thread_current();
+  cur->priority = new_priority;
+  if (!list_empty(&ready_list))
+  {
+    struct list_elem *e = list_max(&ready_list, higher_priority, NULL);
     int max_priority = list_entry(e, struct thread, elem)->priority;
-    
-    if (thread_current()->priority < max_priority)
+    if (max_priority > cur->priority)
       thread_yield();
-  //}
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -540,9 +510,6 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-  
-  //init sleep time for alarm clock
-  t->sleepTime = 0;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -573,8 +540,7 @@ next_thread_to_run (void)
   if (list_empty (&ready_list)) // if readylist is empty , then return the idle_thread (idle thread is a dead loop for keeping CPU's tempreture.
     return idle_thread;
   else // if ready list is not empty,list modification is in src/lib/kernal/list.h and list.c
-    return list_entry(list_pop_front (&ready_list), struct thread, elem);
-    //return list_entry (list_pop_front (&ready_list), struct thread, elem);
+    return list_entry (list_pop_front (&ready_list), struct thread, elem);
 //list_pop_front: return the first element in the LIST ,return it , and delete it from the orginal LIST 
 }
 
@@ -634,9 +600,6 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
-  //check if any thread should be woken up
-  //thread_checkSleep();
-  
   struct thread *cur = running_thread ();//cur points to the thread which is currently using CPU
   struct thread *next = next_thread_to_run ();//MOST IMPORTANT PART:next points the next thread need to run , and then run it .
   struct thread *prev = NULL;
@@ -668,36 +631,71 @@ allocate_tid (void)
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
-
-
-//ALARM CLOCK HELPER METHODS
+//Alarm clock
 void
-thread_addToSleep(void)
+thread_addToSleep(int64_t ticks)
 {
   struct thread *cur = thread_current();
   enum intr_level old_level;
+  
   old_level = intr_disable();
-
-  cur->status = THREAD_BLOCKED;
-  list_push_back(&sleeping_list, &cur->elem);
+  
+  if (cur != idle_thread)
+  {
+    cur->sleep_time = timer_ticks() + ticks;
+    cur ->status   = THREAD_BLOCKED;
+    list_insert_ordered(&sleep_list, &cur->elem, less_sleep_time, NULL);
+  }
+  
   schedule();
-
-  intr_set_level (old_level);
+  intr_set_level(old_level);
 }
 
 void
-thread_checkSleep(void)
+thread_checkSleep()
 {
-  struct list_elem *e;
-  for (e = list_begin(&sleeping_list); e != list_end(&sleeping_list); 
-       e = list_next(e))
+  struct list_elem *e,*f;
+  struct thread *t;
+
+  for (e  = list_begin(&sleep_list);
+       e != list_end(&sleep_list);)
   {
-    struct thread *t = list_entry(e, struct thread, elem);
-    if (t->sleepTime <= timer_ticks())
+    t = list_entry(e, struct thread, elem);
+    if (t->sleep_time <=timer_ticks())
     {
-      e = (list_remove(&t->elem))->prev;
-      t->sleepTime = 0;
+      f = list_remove(e);
+      t = list_entry(e, struct thread, elem);
       thread_unblock(t);
+      e = f;
     }
+    else
+      break;
   }
 }
+
+//Compare sleep time of 2 threads,
+//will be used to vreate sleep_list
+bool
+less_sleep_time(const struct list_elem *e1, const struct list_elem *e2, 
+               void *aux)
+{
+  struct thread *t1,*t2;
+  t1 = list_entry(e1, struct thread, elem);
+  t2 = list_entry(e2, struct thread, elem);
+  return (t1->sleep_time < t2->sleep_time);
+}
+
+//Second task
+//similar to above, but for priority comparision
+bool 
+higher_priority (const struct list_elem *e1, const struct list_elem *e2, 
+               void *aux)
+{
+  struct thread *t1,*t2;
+  t1 = list_entry(e1, struct thread, elem);
+  t2 = list_entry(e2, struct thread, elem);
+  return (t1->priority > t2->priority);
+}
+
+
+

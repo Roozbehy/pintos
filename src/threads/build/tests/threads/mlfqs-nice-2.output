@@ -1,11 +1,11 @@
-qemu -hda /tmp/vFnjUHAIOC.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/mFzl0ZuUxC.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-nice-2
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  209,510,400 loops/s.
+Calibrating timer...  222,412,800 loops/s.
 Boot complete.
 Executing 'mlfqs-nice-2':
 (mlfqs-nice-2) begin
@@ -16,8 +16,8 @@ Executing 'mlfqs-nice-2':
 (mlfqs-nice-2) Thread 1 received 1501 ticks.
 (mlfqs-nice-2) end
 Execution of 'mlfqs-nice-2' complete.
-Timer: 4022 ticks
-Thread: 1000 idle ticks, 3022 kernel ticks, 0 user ticks
+Timer: 4027 ticks
+Thread: 1000 idle ticks, 3027 kernel ticks, 0 user ticks
 Console: 634 characters output
 Keyboard: 0 keys pressed
 Powering off...
