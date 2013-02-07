@@ -401,9 +401,7 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  struct thread *cur = thread_current();
-  cur->priority = new_priority;
-  cur->old_priority = new_priority;
+  thread_current()->priority = new_priority;
 
   //if (!list_empty(&ready_list))
   //{
@@ -412,7 +410,7 @@ thread_set_priority (int new_priority)
     struct list_elem *e = list_head(&ready_list);
     int max_priority = list_entry(e, struct thread, elem)->priority;
     
-    if (cur->priority < max_priority)
+    if (thread_current()->priority < max_priority)
       thread_yield();
   //}
 }
@@ -637,7 +635,7 @@ static void
 schedule (void) 
 {
   //check if any thread should be woken up
-  thread_checkSleep();
+  //thread_checkSleep();
   
   struct thread *cur = running_thread ();//cur points to the thread which is currently using CPU
   struct thread *next = next_thread_to_run ();//MOST IMPORTANT PART:next points the next thread need to run , and then run it .
@@ -698,10 +696,8 @@ thread_checkSleep(void)
     if (t->sleepTime <= timer_ticks())
     {
       e = (list_remove(&t->elem))->prev;
-      list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);
-
-      t->status = THREAD_READY;
       t->sleepTime = 0;
+      thread_unblock(t);
     }
   }
 }

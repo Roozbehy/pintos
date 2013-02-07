@@ -1,19 +1,19 @@
-qemu -hda /tmp/HAnGaXVcWS.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/uujDFEHP3W.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run alarm-negative
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  209,510,400 loops/s.
+Calibrating timer...  235,520,000 loops/s.
 Boot complete.
 Executing 'alarm-negative':
 (alarm-negative) begin
 (alarm-negative) PASS
 (alarm-negative) end
 Execution of 'alarm-negative' complete.
-Timer: 21 ticks
-Thread: 0 idle ticks, 21 kernel ticks, 0 user ticks
+Timer: 27 ticks
+Thread: 1 idle ticks, 26 kernel ticks, 0 user ticks
 Console: 409 characters output
 Keyboard: 0 keys pressed
 Powering off...
