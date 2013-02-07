@@ -1,11 +1,11 @@
-qemu -hda /tmp/PS62XCiY3i.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/sh22w942bk.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-condvar
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  214,220,800 loops/s.
+Calibrating timer...  235,520,000 loops/s.
 Boot complete.
 Executing 'priority-condvar':
 (priority-condvar) begin
@@ -31,8 +31,8 @@ Executing 'priority-condvar':
 (priority-condvar) Signaling...
 (priority-condvar) end
 Execution of 'priority-condvar' complete.
-Timer: 30 ticks
-Thread: 0 idle ticks, 30 kernel ticks, 0 user ticks
+Timer: 27 ticks
+Thread: 0 idle ticks, 27 kernel ticks, 0 user ticks
 Console: 1197 characters output
 Keyboard: 0 keys pressed
 Powering off...
