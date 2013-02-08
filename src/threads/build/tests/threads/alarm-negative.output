@@ -1,19 +1,17 @@
-qemu -hda /tmp/uujDFEHP3W.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/qeKrKWa5Vt.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run alarm-negative
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  235,520,000 loops/s.
-Boot complete.
-Executing 'alarm-negative':
-(alarm-negative) begin
-(alarm-negative) PASS
-(alarm-negative) end
-Execution of 'alarm-negative' complete.
-Timer: 27 ticks
-Thread: 1 idle ticks, 26 kernel ticks, 0 user ticks
-Console: 409 characters output
+Kernel PANIC at ../../threads/thread.c:610 in schedule(): assertion `is_thread (next)' failed.
+Call stack: 0xc002859e.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 0 ticks
+Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
+Console: 488 characters output
 Keyboard: 0 keys pressed
 Powering off...

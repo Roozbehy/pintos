@@ -88,16 +88,6 @@ struct thread
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
-
-
-	//yan implementation is :
-	int old_priority ;
-	struct list locks;
-	bool donated;
-	struct lock *blocked;
-	//yan implementation	
-
-
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
 
@@ -112,8 +102,15 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
     
-    //For Alarm clock, holds the time to wake up
-    int64_t sleepTime;    
+    //Alarm clock
+    int64_t sleep_time;
+
+    //Donation stuff
+    //priority before donation
+    int prev_priority;
+    struct lock *target_lock;
+    //indicated if this thread have donate it's priority to some other threads
+    bool donator;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -153,7 +150,12 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 //Alarm clock
-void thread_addToSleep(void);
+void thread_addToSleep(int64_t);
 void thread_checkSleep(void);
+//to compare sleep time
+bool less_sleep_time(const struct list_elem*, const struct list_elem*, void*);
+
+//To compare priority
+bool higher_priority(const struct list_elem*, const struct list_elem*, void*);
 
 #endif /* threads/thread.h */

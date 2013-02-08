@@ -1,20 +1,5 @@
 FAIL
-Test output failed to match any acceptable form.
-
-Acceptable output:
-  (priority-change) begin
-  (priority-change) Creating a high-priority thread 2.
-  (priority-change) Thread 2 now lowering priority.
-  (priority-change) Thread 2 should have just lowered its priority.
-  (priority-change) Thread 2 exiting.
-  (priority-change) Thread 2 should have just exited.
-  (priority-change) end
-Differences in `diff -u' format:
-  (priority-change) begin
-  (priority-change) Creating a high-priority thread 2.
-  (priority-change) Thread 2 now lowering priority.
-- (priority-change) Thread 2 should have just lowered its priority.
-  (priority-change) Thread 2 exiting.
-+ (priority-change) Thread 2 should have just lowered its priority.
-  (priority-change) Thread 2 should have just exited.
-  (priority-change) end
+Kernel panic in run: PANIC at ../../threads/thread.c:610 in schedule(): assertion `is_thread (next)' failed.
+Call stack: 0xc002859e
+Translation of call stack:
+0xc002859e: debug_panic (.../../lib/kernel/debug.c:38)

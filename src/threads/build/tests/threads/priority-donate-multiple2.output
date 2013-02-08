@@ -1,24 +1,17 @@
-qemu -hda /tmp/4YWq1vZTgM.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/ll8VaezUwO.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-donate-multiple2
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  235,520,000 loops/s.
-Boot complete.
-Executing 'priority-donate-multiple2':
-(priority-donate-multiple2) begin
-(priority-donate-multiple2) Main thread should have priority 34.  Actual priority: 31.
-(priority-donate-multiple2) Thread c finished.
-(priority-donate-multiple2) Main thread should have priority 36.  Actual priority: 31.
-(priority-donate-multiple2) Main thread should have priority 36.  Actual priority: 31.
-(priority-donate-multiple2) Threads b, a, c should have just finished, in that order.
-(priority-donate-multiple2) Main thread should have priority 31.  Actual priority: 31.
-(priority-donate-multiple2) end
-Execution of 'priority-donate-multiple2' complete.
-Timer: 26 ticks
-Thread: 0 idle ticks, 26 kernel ticks, 0 user ticks
-Console: 923 characters output
+Kernel PANIC at ../../threads/thread.c:610 in schedule(): assertion `is_thread (next)' failed.
+Call stack: 0xc002859e.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 0 ticks
+Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
+Console: 499 characters output
 Keyboard: 0 keys pressed
 Powering off...
