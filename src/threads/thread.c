@@ -214,6 +214,7 @@ thread_create (const char *name, int priority,
   intr_set_level (old_level);
 
   /* Add to run queue. */
+///  msg("xxxx ");
   thread_unblock (t);
 
   return tid;
@@ -398,6 +399,10 @@ void
 thread_set_nice (int nice UNUSED) 
 {
   /* Not yet implemented. */
+}
+
+struct list* thread_get_readylist (){
+	return &ready_list;
 }
 
 /* Returns the current thread's nice value. */
@@ -687,7 +692,7 @@ less_sleep_time(const struct list_elem *e1, const struct list_elem *e2,
   return (t1->sleep_time < t2->sleep_time);
 }
 
-//Second task
+/*our implementation */
 //similar to above, but for priority comparision
 bool 
 higher_priority (const struct list_elem *e1, const struct list_elem *e2, 
@@ -699,5 +704,14 @@ higher_priority (const struct list_elem *e1, const struct list_elem *e2,
   return (t1->priority > t2->priority);
 }
 
+bool
+lower_priority (const struct list_elem *e1, const struct list_elem *e2,
+               void *aux)
+{
+  struct thread *t1,*t2;
+  t1 = list_entry(e1, struct thread, elem);
+  t2 = list_entry(e2, struct thread, elem);
+  return (t1->priority < t2->priority);
+}
 
 

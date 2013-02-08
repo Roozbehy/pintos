@@ -1,16 +1,11 @@
-<<<<<<< HEAD
-qemu -hda /tmp/sh22w942bk.dsk -m 4 -net none -nographic -monitor null --no-kvm
-=======
-qemu -hda /tmp/5wi8QAKH5Z.dsk -m 4 -net none -nographic -monitor null --no-kvm
->>>>>>> 4bba55e83dabb4f79746696bb2bb8c314fe3631a
+qemu -hda /tmp/MkCBCdUSa_.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-condvar
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-<<<<<<< HEAD
-Calibrating timer...  235,520,000 loops/s.
+Calibrating timer...  212,582,400 loops/s.
 Boot complete.
 Executing 'priority-condvar':
 (priority-condvar) begin
@@ -36,18 +31,8 @@ Executing 'priority-condvar':
 (priority-condvar) Signaling...
 (priority-condvar) end
 Execution of 'priority-condvar' complete.
-Timer: 27 ticks
-Thread: 0 idle ticks, 27 kernel ticks, 0 user ticks
+Timer: 30 ticks
+Thread: 0 idle ticks, 30 kernel ticks, 0 user ticks
 Console: 1197 characters output
-=======
-Kernel PANIC at ../../threads/thread.c:610 in schedule(): assertion `is_thread (next)' failed.
-Call stack: 0xc002859e.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 0 ticks
-Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
-Console: 490 characters output
->>>>>>> 4bba55e83dabb4f79746696bb2bb8c314fe3631a
 Keyboard: 0 keys pressed
 Powering off...

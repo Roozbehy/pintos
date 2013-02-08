@@ -1,17 +1,20 @@
-qemu -hda /tmp/52thrAVMj2.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/KHmEfMerCn.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-donate-sema
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Kernel PANIC at ../../threads/thread.c:610 in schedule(): assertion `is_thread (next)' failed.
-Call stack: 0xc002859e.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 0 ticks
-Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
-Console: 494 characters output
+Calibrating timer...  215,859,200 loops/s.
+Boot complete.
+Executing 'priority-donate-sema':
+(priority-donate-sema) begin
+(priority-donate-sema) Thread L acquired lock.
+(priority-donate-sema) Main thread finished.
+(priority-donate-sema) end
+Execution of 'priority-donate-sema' complete.
+Timer: 28 ticks
+Thread: 0 idle ticks, 28 kernel ticks, 0 user ticks
+Console: 509 characters output
 Keyboard: 0 keys pressed
 Powering off...

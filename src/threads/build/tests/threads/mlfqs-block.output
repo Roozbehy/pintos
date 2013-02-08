@@ -1,17 +1,25 @@
-qemu -hda /tmp/s7gJqBOyg0.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/YGCx66rjZ5.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-block
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Kernel PANIC at ../../threads/thread.c:610 in schedule(): assertion `is_thread (next)' failed.
-Call stack: 0xc002859e.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 0 ticks
-Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
-Console: 492 characters output
+Calibrating timer...  212,582,400 loops/s.
+Boot complete.
+Executing 'mlfqs-block':
+(mlfqs-block) begin
+(mlfqs-block) Main thread acquiring lock.
+(mlfqs-block) Main thread creating block thread, sleeping 25 seconds...
+(mlfqs-block) Block thread spinning for 20 seconds...
+(mlfqs-block) Block thread acquiring lock...
+(mlfqs-block) Main thread spinning for 5 seconds...
+(mlfqs-block) Main thread releasing lock.
+(mlfqs-block) Block thread should have already acquired lock.
+(mlfqs-block) end
+Execution of 'mlfqs-block' complete.
+Timer: 3029 ticks
+Thread: 500 idle ticks, 2529 kernel ticks, 0 user ticks
+Console: 754 characters output
 Keyboard: 0 keys pressed
 Powering off...
