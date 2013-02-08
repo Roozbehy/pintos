@@ -264,10 +264,11 @@ thread_unblock (struct thread *t)
 
   if (!list_empty(&ready_list))
   {
+    struct thread *cur = thread_current();
     struct list_elem *e = list_max(&ready_list, higher_priority, NULL);
     int max_priority = list_entry(e, struct thread, elem)->priority;
-    if ((thread_current()->priority < max_priority)
-        &&(thread_current() != idle_thread))
+    if ((cur->priority < max_priority)
+        &&(cur != idle_thread))
     {
       if (intr_context())
         intr_yield_on_return();
@@ -643,7 +644,8 @@ thread_addToSleep(int64_t ticks)
   if (cur != idle_thread)
   {
     cur->sleep_time = timer_ticks() + ticks;
-    cur ->status   = THREAD_BLOCKED;
+    //thread_blocked doesnt work. TODO: Check why
+    cur->status = THREAD_BLOCKED;
     list_insert_ordered(&sleep_list, &cur->elem, less_sleep_time, NULL);
   }
   

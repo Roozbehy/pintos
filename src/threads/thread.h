@@ -104,6 +104,13 @@ struct thread
     
     //Alarm clock
     int64_t sleep_time;
+
+    //Donation stuff
+    //priority before donation
+    int prev_priority;
+    struct lock *target_lock;
+    //indicated if this thread have donate it's priority to some other threads
+    bool donator;
   };
 
 /* If false (default), use round-robin scheduler.

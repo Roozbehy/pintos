@@ -196,8 +196,27 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+//implementing donation
+  enum intr_level old_level;
+  old_level = intr_disable();
+  //PRE:1.HIGHEST PRIORITY THREADS TAKING THE CPU
+  //2.CURRENT->THREAD WHICH HAVE HIGHEST PRIORITY
+  //3.Thus the lock holder must be in the ready list
+  struct thread *cur = thread_current();
+  struct thread *lock_holder = lock->holder;
+
+  while (lock_holder!=NULL && lock_holder->priority < cur->priority){
+	lock_holder->prev_priority = lock_holder->priority;
+	lock_holder->priority = cur->priority;
+	cur->priority=lock_holder->prev_priority;
+
+	thread_block();
+  }
+
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
+
+  intr_set_level(old_level);
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -230,6 +249,24 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
+
+  //PRE LOCK HOLDER MUST BE THE LOWER ONE , AND HIGHER ONE IS STILL WAITING FOR THE LOWER ONE
+  //THE HIGHER ONE 'S CURRENT PRIORITY IS LOWER ONE'S
+
+  struct thread *lock_holder = lock->holder;
+  struct list_elem *e;
+
+  for (e = list_begin(&ready_list);
+         e != list_end(&ready_list);) {
+
+  }
+
+  while (lock_holder!=NULL && lock_holder->prev_priority < cur->priority){
+ 	lock_holder->prev_priority = lock_holder->priority;
+ 	lock_holder->priority = cur->priority;
+ 	cur->priority=lock_holder->prev_priority;
+ 	thread_block();
+   }
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);

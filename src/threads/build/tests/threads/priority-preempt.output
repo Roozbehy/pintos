@@ -1,25 +1,17 @@
-qemu -hda /tmp/2pNdE6VF80.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/uVyu_sAXD7.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-preempt
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  222,412,800 loops/s.
-Boot complete.
-Executing 'priority-preempt':
-(priority-preempt) begin
-(priority-preempt) Thread high-priority iteration 0
-(priority-preempt) Thread high-priority iteration 1
-(priority-preempt) Thread high-priority iteration 2
-(priority-preempt) Thread high-priority iteration 3
-(priority-preempt) Thread high-priority iteration 4
-(priority-preempt) Thread high-priority done!
-(priority-preempt) The high-priority thread should have already completed.
-(priority-preempt) end
-Execution of 'priority-preempt' complete.
-Timer: 27 ticks
-Thread: 0 idle ticks, 27 kernel ticks, 0 user ticks
-Console: 778 characters output
+Kernel PANIC at ../../threads/thread.c:610 in schedule(): assertion `is_thread (next)' failed.
+Call stack: 0xc002859e.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 0 ticks
+Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
+Console: 490 characters output
 Keyboard: 0 keys pressed
 Powering off...

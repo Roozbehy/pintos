@@ -1,23 +1,17 @@
-qemu -hda /tmp/nsrXBpewHW.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/Ijytw90B2O.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-load-1
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  222,412,800 loops/s.
-Boot complete.
-Executing 'mlfqs-load-1':
-(mlfqs-load-1) begin
-(mlfqs-load-1) spinning for up to 45 seconds, please wait...
-(mlfqs-load-1) FAIL: load average stayed below 0.5 for more than 45 seconds
-Kernel PANIC at ../../tests/threads/tests.c:93 in fail(): test failed
-Call stack: 0xc00285be.
+Kernel PANIC at ../../threads/thread.c:610 in schedule(): assertion `is_thread (next)' failed.
+Call stack: 0xc002859e.
 The `backtrace' program can make call stacks useful.
 Read "Backtraces" in the "Debugging Tools" chapter
 of the Pintos documentation for more information.
-Timer: 4627 ticks
-Thread: 0 idle ticks, 4627 kernel ticks, 0 user ticks
-Console: 716 characters output
+Timer: 0 ticks
+Thread: 0 idle ticks, 0 kernel ticks, 0 user ticks
+Console: 493 characters output
 Keyboard: 0 keys pressed
 Powering off...
