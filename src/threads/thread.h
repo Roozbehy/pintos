@@ -14,6 +14,9 @@ enum thread_status
     THREAD_DYING        /* About to be destroyed. */
   };
 
+
+
+
 /* Thread identifier type.
    You can redefine this to whatever type you like. */
 typedef int tid_t;
@@ -91,6 +94,18 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
 
+    /*our implements*/
+    int pre_priority;  //priority before donation
+    bool is_donated; 	//if it has been donated priority from other thread
+    struct lock *lock;	//which lock this thread is waiting for
+
+    struct list locks; 	//list of locks this thread is holding (may have multiple locks)
+    /*our implements */
+
+
+
+
+
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -135,7 +150,8 @@ typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);
-void thread_set_priority (int);
+void thread_set_priority (int );
+void thread_set_priority_aux (struct thread *, int);
 
 int thread_get_nice (void);
 void thread_set_nice (int);

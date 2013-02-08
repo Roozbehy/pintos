@@ -257,7 +257,6 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();//intr_disable:/src/threads/interrupt.c . Function:disables interrupts and returns the previouse interrupt status, thus , old_level is the previouse interrupt status. (see lastline)
 //these 3 sentences above is normarly using together , means shut down the interrupt , ( to avoid interrupt by anything else when this thread is running)
 
-//=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
   ASSERT (t->status == THREAD_BLOCKED);
   list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);//THIS IS THE KEY SENTENCE:add thread 't' to ready_list by using push back ;(pushback :inserts the element at the END of the list,so that it become the back in list)
   t->status = THREAD_READY;//and set thread 't' status as READY
@@ -276,9 +275,7 @@ thread_unblock (struct thread *t)
     }
   }
 
-//=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
   intr_set_level (old_level);//resume previouse interrupt status
-//---
 }
 
 /* Returns the name of the running thread. */
@@ -301,7 +298,7 @@ thread_current (void)
      have overflowed its stack.  Each thread has less than 4 kB
      of stack, so a few big automatic arrays or moderate
      recursion can cause stack overflow. */
-  ASSERT (is_thread (t));
+ ASSERT (is_thread (t));
   ASSERT (t->status == THREAD_RUNNING);
 
   return t;
@@ -370,9 +367,11 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
-/* Sets the current thread's priority to NEW_PRIORITY. */
+/*our implements*/
+/* Sets the current thread's priority to NEW_PRIORITY.
+ * if the top of the readlist's priority is higher then current one , then current one yield immediatly */
 void
-thread_set_priority (int new_priority) 
+thread_set_priority (int new_priority)
 {
   struct thread *cur = thread_current();
   cur->priority = new_priority;
@@ -382,6 +381,21 @@ thread_set_priority (int new_priority)
     int max_priority = list_entry(e, struct thread, elem)->priority;
     if (max_priority > cur->priority)
       thread_yield();
+  }
+}
+
+void
+thread_set_priority_aux (struct thread* t  ,int new_priority)
+{
+  t->priority = new_priority;
+
+  if (!list_empty(&ready_list))
+  {
+    struct list_elem *e = list_max(&ready_list, higher_priority, NULL);
+    int max_priority = list_entry(e, struct thread, elem)->priority;
+    if (max_priority > thread_current()->priority){
+      thread_yield();
+    }
   }
 }
 
@@ -508,7 +522,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
+//  t->priority = priority; //original code
+  //mychange:
+  thread_set_priority_aux(t,priority); //original code only simply set priority , this one will check the list and yield maybe
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable ();
@@ -611,6 +627,7 @@ schedule (void)
   if (cur != next)
     prev = switch_threads (cur, next);
   thread_schedule_tail (prev);
+  msg("thread scheduled by thread %d",thread_current()->priority); //debug only
 }
 
 /* Returns a tid to use for a new thread. */

@@ -1,11 +1,11 @@
-qemu -hda /tmp/_eW63RnqQ9.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/eypl4c0tlf.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run alarm-multiple
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  215,859,200 loops/s.
+Calibrating timer...  209,510,400 loops/s.
 Boot complete.
 Executing 'alarm-multiple':
 (alarm-multiple) begin
@@ -51,8 +51,8 @@ Executing 'alarm-multiple':
 (alarm-multiple) thread 4: duration=50, iteration=7, product=350
 (alarm-multiple) end
 Execution of 'alarm-multiple' complete.
-Timer: 581 ticks
-Thread: 550 idle ticks, 31 kernel ticks, 0 user ticks
+Timer: 576 ticks
+Thread: 550 idle ticks, 26 kernel ticks, 0 user ticks
 Console: 2955 characters output
 Keyboard: 0 keys pressed
 Powering off...

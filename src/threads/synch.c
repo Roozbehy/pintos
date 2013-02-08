@@ -189,6 +189,7 @@ lock_init (struct lock *lock)
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
    we need to sleep. */
+/* original one
 void
 lock_acquire (struct lock *lock)
 {
@@ -199,6 +200,45 @@ lock_acquire (struct lock *lock)
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
+*/
+
+/*our implementation */
+void
+lock_acquire (struct lock *lock)
+{
+  ASSERT (lock != NULL);
+  ASSERT (!intr_context ());
+  ASSERT (!lock_held_by_current_thread (lock)); //current thread don't have the lock
+
+  enum intr_level old_level ;
+  old_level=intr_disable();
+
+
+  //PRE: 1.donation only happends when lock exist , thus ,the lock holder is not NULL
+    //2.doner is the thread witch have higher priority, and it should be the current running thread if priority donation happends
+  //3.donee is the thread witch has lower priority but holds a lock witch doner is looking for .
+    //4.before donation ,thread will try to 'acquire' a lock ,if not success , then
+
+  struct thread *doner;
+  doner = thread_current();
+  struct thread *donee;
+  donee = lock->holder;
+
+  while ( lock->holder!=NULL && doner->priority>donee->priority ) {//donation only happends when lock exits,i.e. lock's holder is not null;
+
+	 doner->pre_priority = doner->priority;	//save original priority
+	 doner->priority=donee->priority;//give the lower priority to the doner then try to yield current
+	 thread_set_priority_aux(donee,doner->pre_priority);	//give higher priority to the lock holder, then try to yield current
+
+  }
+
+
+  sema_down (&lock->semaphore); //try to release the lock
+  lock->holder = doner; // if lock is free then give this lock to the H thread
+
+  intr_set_level(old_level);//interrupt enabled
+}
+
 
 /* Tries to acquires LOCK and returns true if successful or false
    on failure.  The lock must not already be held by the current
@@ -225,16 +265,36 @@ lock_try_acquire (struct lock *lock)
    An interrupt handler cannot acquire a lock, so it does not
    make sense to try to release a lock within an interrupt
    handler. */
+/*original code
+void
+lock_release (struct lock *lock)
+{
+  ASSERT (lock != NULL);
+  ASSERT (lock_held_by_current_thread (lock));
+  lock->holder = NULL;
+  sema_up (&lock->semaphore);
+}
+*/
 void
 lock_release (struct lock *lock) 
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
+  struct thread *cur;
+
+
+  enum intr_level old_level;
+  old_level= intr_disable(); // interrupt disable
 
   lock->holder = NULL;
-  sema_up (&lock->semaphore);
-}
+  sema_up (&lock->semaphore); //if successfully release the lock
+//  cur = thread_current();
+//  cur->priority=cur->pre_priority;
 
+
+
+  intr_set_level(old_level);//interrupt enabled
+}
 /* Returns true if the current thread holds LOCK, false
    otherwise.  (Note that testing whether some other thread holds
    a lock would be racy.) */
