@@ -85,7 +85,7 @@ sema_down (struct semaphore *sema) {
 	old_level = intr_disable(); //disable the interrupts
 
 	while (sema->value==0){
-		list_insert_ordered(&sema->waiters,&thread_current()->elem,higher_priority,NULL);
+		list_insert_ordered(&sema->waiters,&thread_current()->elem,higher_priority,NULL); //insert current thread into waiter list
 		thread_block();
 	}
 	sema->value--;
@@ -126,6 +126,7 @@ sema_try_down (struct semaphore *sema)
    and wakes up one thread of those waiting for SEMA, if any.
 
    This function may be called from an interrupt handler. */
+/*original code
 void
 sema_up (struct semaphore *sema) 
 {
@@ -139,6 +140,27 @@ sema_up (struct semaphore *sema)
                                 struct thread, elem));
   sema->value++;
   intr_set_level (old_level);
+}
+*/
+
+/*our implements*/
+void sema_up (struct semaphore *sema){
+	enum intr_level old_level;
+	ASSERT (sema!=NULL);
+	old_level=intr_disable();
+
+	sema->value ++ ;  //DON'T MOVE IT:this one seems must been put here
+	if (!list_empty(&sema->waiters)){//if sema do have waiting threads
+		/*unblock the thread with the highest priority*/
+		/*PRE:before we sema_up,we call the sema_down, which this will always gives you a sorted list of waiters , highest priority first*/
+		struct thread *max_t;  //thread with highest priority
+		struct list_elem *e = list_min(&sema->waiters, higher_priority, NULL);
+		max_t = list_entry(e, struct thread, elem);
+		list_remove(e); //remove it from the waiter list
+		thread_unblock(max_t);
+	}
+
+	intr_set_level(old_level);
 }
 
 static void sema_test_helper (void *sema_);
