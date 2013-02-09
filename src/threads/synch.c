@@ -69,7 +69,10 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      list_push_back (&sema->waiters, &thread_current ()->elem);
+	  /*original code */
+      //list_push_back (&sema->waiters, &thread_current ()->elem);
+	  /*implementation */
+	  list_insert_ordered(&sema->waiters,&thread_current()->elem,higher_priority,NULL);
       thread_block ();
     }
   sema->value--;
@@ -135,10 +138,28 @@ sema_up (struct semaphore *sema)
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
-  if (!list_empty (&sema->waiters)) 
-    thread_unblock (list_entry (list_pop_front (&sema->waiters),
-                                struct thread, elem));
+  if (!list_empty (&sema->waiters)){
+	  struct thread *t;//
+  	  struct list_elem *e =list_max (&(sema->waiters),lower_priority(),NULL);
+
+      thread_unblock (list_entry (e,struct thread, elem));
+  }
+      //
+//    thread_unblock (list_entry (list_pop_front (&sema->waiters),
+//                                struct thread, elem));
+
+
   sema->value++;
+//  if (!list_empty(&sema->waiters)) {
+//	  struct thread *t;
+//	  struct list_elem *e =list_max (&sema->waiters,lower_priority(),NULL);
+//	  list_remove(e);
+//	  t=list_entry(e,struct thread,elem);
+//
+//	  thread_unblock(t); //move t to the ready list
+//  }
+
+
   intr_set_level (old_level);
 }
 */
@@ -251,8 +272,9 @@ lock_acquire (struct lock *lock)
   while (lock_holder!=NULL && lock_holder->priority < cur->priority){
 	lock_holder->prev_priority = lock_holder->priority;
 	lock_holder->priority = cur->priority;
-	cur->priority=lock_holder->prev_priority;
-
+	cur->prev_priority = cur->priority;  //store donator's current priority
+	cur->priority=lock_holder->prev_priority; //and set donator's priority as L one , resume when lock released
+	cur->donator=true;
 	thread_block();
   }
 
@@ -295,24 +317,49 @@ lock_release (struct lock *lock)
 
   //PRE LOCK HOLDER MUST BE THE LOWER ONE , AND HIGHER ONE IS STILL WAITING FOR THE LOWER ONE
   //THE HIGHER ONE 'S CURRENT PRIORITY IS LOWER ONE'S
+  enum intr_level old_level;
+  old_level = intr_disable();
 
   struct thread *lock_holder = lock->holder;
   struct list_elem *e;
+<<<<<<< HEAD
 //
 //  for (e = list_begin(&ready_list);
 //         e != list_end(&ready_list);) {
 //
 //  }
 //
+=======
+  struct thread* cur = thread_current();
+//
+  struct list* ready_list = thread_get_readylist();
+ for (e = list_begin(ready_list);
+        e != list_end(ready_list);e = e->next) {
+	 struct thread *thread = list_entry(e,struct thread ,elem);
+//	 msg("thread find ");
+	 if (thread->donator){//find the original donator, PRE: from highest priority to lowest
+		 	thread->priority = thread->prev_priority; //resume it's priority
+		 	thread ->donator = false ; // not the donator any more
+
+	 }
+  }
+
+>>>>>>> 31ba36eef69a63861046865b54c373e53269bbd1
 //  while (lock_holder!=NULL && lock_holder->prev_priority < cur->priority){
 // 	lock_holder->prev_priority = lock_holder->priority;
 // 	lock_holder->priority = cur->priority;
 // 	cur->priority=lock_holder->prev_priority;
 // 	thread_block();
 //   }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 31ba36eef69a63861046865b54c373e53269bbd1
 
   lock->holder = NULL;
-  sema_up (&lock->semaphore);
+  sema_up (&lock->semaphore);//t
+
+  intr_set_level(old_level);
 }
 
 /* Returns true if the current thread holds LOCK, false
