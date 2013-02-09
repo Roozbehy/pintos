@@ -47,7 +47,7 @@ sema_init (struct semaphore *sema, unsigned value)
   ASSERT (sema != NULL);
 
   sema->value = value;
-  list_init (&sema->waiters);
+  list_init (&sema->waiters); //initialized the semaphores
 }
 
 /* Down or "P" operation on a semaphore.  Waits for SEMA's value
@@ -57,6 +57,7 @@ sema_init (struct semaphore *sema, unsigned value)
    interrupt handler.  This function may be called with
    interrupts disabled, but if it sleeps then the next scheduled
    thread will probably turn interrupts back on. */
+/* original code --
 void
 sema_down (struct semaphore *sema) 
 {
@@ -74,6 +75,26 @@ sema_down (struct semaphore *sema)
   sema->value--;
   intr_set_level (old_level);
 }
+*/
+/*yan*/
+void
+sema_down (struct semaphore *sema) {
+	enum intr_level old_level;
+	  ASSERT (sema != NULL);
+	  ASSERT (!intr_context ());
+	old_level = intr_disable(); //disable the interrupts
+
+	while (sema->value==0){
+		list_insert_ordered(&sema->waiters,&thread_current()->elem,higher_priority,NULL);
+		thread_block();
+	}
+	sema->value--;
+	intr_set_level (old_level);
+}
+
+
+
+
 
 /* Down or "P" operation on a semaphore, but only if the
    semaphore is not already 0.  Returns true if the semaphore is
@@ -255,18 +276,18 @@ lock_release (struct lock *lock)
 
   struct thread *lock_holder = lock->holder;
   struct list_elem *e;
-
-  for (e = list_begin(&ready_list);
-         e != list_end(&ready_list);) {
-
-  }
-
-  while (lock_holder!=NULL && lock_holder->prev_priority < cur->priority){
- 	lock_holder->prev_priority = lock_holder->priority;
- 	lock_holder->priority = cur->priority;
- 	cur->priority=lock_holder->prev_priority;
- 	thread_block();
-   }
+//
+//  for (e = list_begin(&ready_list);
+//         e != list_end(&ready_list);) {
+//
+//  }
+//
+//  while (lock_holder!=NULL && lock_holder->prev_priority < cur->priority){
+// 	lock_holder->prev_priority = lock_holder->priority;
+// 	lock_holder->priority = cur->priority;
+// 	cur->priority=lock_holder->prev_priority;
+// 	thread_block();
+//   }
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);
