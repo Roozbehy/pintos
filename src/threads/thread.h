@@ -109,12 +109,16 @@ struct thread
     /*our implementation*/
     //Donation stuff
     //priority before donation
+    //duc:
     int prev_priority;
     struct lock *target_lock;
-    int donee_priority; //store the priority of donee's
-    int donation_times;
+    struct list lock_list;
+    int saved_priority; //save the priority change during the donation
+   // int donee_priority; //store the priority of donee's
+    //int donation_times;
     //indicated if this thread have donate it's priority to some other threads
-    bool donator;
+    bool been_donated;
+    bool been_donated_aux;
   };
 
 /* If false (default), use round-robin scheduler.

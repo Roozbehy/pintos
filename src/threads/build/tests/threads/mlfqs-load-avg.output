@@ -1,11 +1,11 @@
-qemu -hda /tmp/YXGRZ21Deg.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/KmvaC_IQAh.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-load-avg
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  130,867,200 loops/s.
+Calibrating timer...  209,510,400 loops/s.
 Boot complete.
 Executing 'mlfqs-load-avg':
 (mlfqs-load-avg) begin
@@ -103,8 +103,8 @@ Executing 'mlfqs-load-avg':
 (mlfqs-load-avg) After 178 seconds, load average=0.00.
 (mlfqs-load-avg) end
 Execution of 'mlfqs-load-avg' complete.
-Timer: 18824 ticks
-Thread: 6900 idle ticks, 11924 kernel ticks, 0 user ticks
+Timer: 18821 ticks
+Thread: 6899 idle ticks, 11922 kernel ticks, 0 user ticks
 Console: 5393 characters output
 Keyboard: 0 keys pressed
 Powering off...

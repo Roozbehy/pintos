@@ -86,5 +86,5 @@ Differences in `diff -u' format:
 + (priority-donate-chain) main should have priority 15.  Actual priority: 3.
 + (priority-donate-chain) main should have priority 18.  Actual priority: 3.
 + (priority-donate-chain) main should have priority 21.  Actual priority: 3.
-+ (priority-donate-chain) main finishing with priority 3.
++ (priority-donate-chain) main finishing with priority 31.
   (priority-donate-chain) end

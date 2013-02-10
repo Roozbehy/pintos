@@ -192,7 +192,7 @@ thread_create (const char *name, int priority,
   tid = t->tid = allocate_tid ();
 
   /*yan*/
-  t->donation_times=0; //init donation times;
+  //t->donation_times=0; //init donation times;
   /*==yan*/
 
   /* Prepare thread for first run by initializing its stack.
@@ -215,6 +215,8 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
+  /*yan*/
+  t->been_donated_aux = false;
   intr_set_level (old_level);
 
   /* Add to run queue. */
@@ -380,7 +382,15 @@ void
 thread_set_priority (int new_priority) 
 {
   struct thread *cur = thread_current();
+  cur->prev_priority = new_priority;
+
+  //For donate-low case
+  if (cur->been_donated && !cur->been_donated_aux){
+	  cur->saved_priority = new_priority; //save the priority change inside the donation procedure
+	  cur->been_donated_aux = true;
+  }else
   cur->priority = new_priority;
+
   if (!list_empty(&ready_list))
   {
     struct list_elem *e = list_max(&ready_list, higher_priority, NULL);
@@ -388,6 +398,8 @@ thread_set_priority (int new_priority)
     if (max_priority > cur->priority)
       thread_yield();
   }
+
+
 }
 
 /* Returns the current thread's priority. */
@@ -518,6 +530,12 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+
+  //duc:
+  t->prev_priority = priority;
+  t->been_donated = false;
+  list_init(&t->lock_list);
+
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable ();

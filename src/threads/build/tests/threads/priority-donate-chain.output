@@ -1,4 +1,4 @@
-qemu -hda /tmp/v8B9BwcfEH.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/L2xDl7htVy.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-donate-chain
@@ -17,11 +17,11 @@ Executing 'priority-donate-chain':
 (priority-donate-chain) main should have priority 15.  Actual priority: 3.
 (priority-donate-chain) main should have priority 18.  Actual priority: 3.
 (priority-donate-chain) main should have priority 21.  Actual priority: 3.
-(priority-donate-chain) main finishing with priority 3.
+(priority-donate-chain) main finishing with priority 31.
 (priority-donate-chain) end
 Execution of 'priority-donate-chain' complete.
 Timer: 22 ticks
 Thread: 0 idle ticks, 22 kernel ticks, 0 user ticks
-Console: 1039 characters output
+Console: 1040 characters output
 Keyboard: 0 keys pressed
 Powering off...

@@ -1,4 +1,4 @@
-qemu -hda /tmp/YRKUI1_3SN.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/ymdRyraNtq.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-block

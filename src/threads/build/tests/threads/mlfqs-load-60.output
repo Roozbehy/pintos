@@ -1,4 +1,4 @@
-qemu -hda /tmp/syvRWctyV6.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/xYvtkozWsv.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-load-60
@@ -104,7 +104,7 @@ Executing 'mlfqs-load-60':
 (mlfqs-load-60) end
 Execution of 'mlfqs-load-60' complete.
 Timer: 18821 ticks
-Thread: 12799 idle ticks, 6022 kernel ticks, 0 user ticks
+Thread: 12798 idle ticks, 6023 kernel ticks, 0 user ticks
 Console: 5302 characters output
 Keyboard: 0 keys pressed
 Powering off...

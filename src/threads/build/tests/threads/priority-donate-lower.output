@@ -1,4 +1,4 @@
-qemu -hda /tmp/LpD4EdWuMo.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/4L5UoHFSG5.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-donate-lower
@@ -11,13 +11,15 @@ Executing 'priority-donate-lower':
 (priority-donate-lower) begin
 (priority-donate-lower) Main thread should have priority 41.  Actual priority: 41.
 (priority-donate-lower) Lowering base priority...
-(priority-donate-lower) Main thread should have priority 41.  Actual priority: 21.
+(priority-donate-lower) Main thread should have priority 41.  Actual priority: 41.
+(priority-donate-lower) acquire: got the lock
+(priority-donate-lower) acquire: done
 (priority-donate-lower) acquire must already have finished.
-(priority-donate-lower) Main thread should have priority 21.  Actual priority: 41.
+(priority-donate-lower) Main thread should have priority 21.  Actual priority: 21.
 (priority-donate-lower) end
 Execution of 'priority-donate-lower' complete.
 Timer: 22 ticks
 Thread: 0 idle ticks, 22 kernel ticks, 0 user ticks
-Console: 781 characters output
+Console: 865 characters output
 Keyboard: 0 keys pressed
 Powering off...
