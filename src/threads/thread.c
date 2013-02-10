@@ -262,9 +262,8 @@ thread_unblock (struct thread *t)
   enum intr_level old_level;
   ASSERT (is_thread (t));
 
-  old_level = intr_disable ();
+  //old_level = intr_disable ();
 
-//=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
   ASSERT (t->status == THREAD_BLOCKED);
   list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);
   t->status = THREAD_READY;
@@ -272,7 +271,7 @@ thread_unblock (struct thread *t)
   if (!list_empty(&ready_list))
   {
     struct thread *cur = thread_current();
-    struct list_elem *e = list_max(&ready_list, higher_priority, NULL);
+    struct list_elem *e = list_min(&ready_list, higher_priority, NULL);
     int max_priority = list_entry(e, struct thread, elem)->priority;
     if ((cur->priority < max_priority)
         &&(cur != idle_thread))
@@ -284,8 +283,7 @@ thread_unblock (struct thread *t)
     }
   }
 
-//=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
-  intr_set_level (old_level);
+  //intr_set_level (old_level);
 }
 
 /* Returns the name of the running thread. */

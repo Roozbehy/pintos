@@ -1,11 +1,11 @@
-qemu -hda /tmp/S9LKIqUSFl.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/W33aGJJsSg.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-load-1
 Pintos booting with 4,096 kB RAM...
 383 pages available in kernel pool.
 383 pages available in user pool.
-Calibrating timer...  209,510,400 loops/s.
+Calibrating timer...  130,867,200 loops/s.
 Boot complete.
 Executing 'mlfqs-load-1':
 (mlfqs-load-1) begin
@@ -16,8 +16,8 @@ Call stack: 0xc00287be.
 The `backtrace' program can make call stacks useful.
 Read "Backtraces" in the "Debugging Tools" chapter
 of the Pintos documentation for more information.
-Timer: 4621 ticks
-Thread: 0 idle ticks, 4621 kernel ticks, 0 user ticks
+Timer: 4624 ticks
+Thread: 0 idle ticks, 4624 kernel ticks, 0 user ticks
 Console: 716 characters output
 Keyboard: 0 keys pressed
 Powering off...

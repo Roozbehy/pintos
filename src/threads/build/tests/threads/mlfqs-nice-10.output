@@ -1,4 +1,4 @@
-qemu -hda /tmp/xpcVs0iIIT.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/z7DyI8j9vC.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-nice-10
@@ -17,10 +17,10 @@ Executing 'mlfqs-nice-10':
 (mlfqs-nice-10) Thread 2 received 301 ticks.
 (mlfqs-nice-10) Thread 3 received 300 ticks.
 (mlfqs-nice-10) Thread 4 received 300 ticks.
-(mlfqs-nice-10) Thread 5 received 301 ticks.
+(mlfqs-nice-10) Thread 5 received 300 ticks.
 (mlfqs-nice-10) Thread 6 received 300 ticks.
 (mlfqs-nice-10) Thread 7 received 301 ticks.
-(mlfqs-nice-10) Thread 8 received 300 ticks.
+(mlfqs-nice-10) Thread 8 received 301 ticks.
 (mlfqs-nice-10) Thread 9 received 300 ticks.
 (mlfqs-nice-10) end
 Execution of 'mlfqs-nice-10' complete.

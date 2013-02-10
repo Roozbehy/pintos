@@ -84,10 +84,11 @@ sema_down (struct semaphore *sema) {
 	  ASSERT (!intr_context ());
 	old_level = intr_disable(); //disable the interrupts
 
-	while (sema->value==0){
-		//insert current thread into waiter list
-		list_insert_ordered(&sema->waiters,&thread_current()->elem,higher_priority,NULL);
-		thread_block();
+	while (sema->value==0)
+	{
+	  //insert current thread into waiter list
+	  list_insert_ordered(&sema->waiters,&thread_current()->elem,higher_priority,NULL);
+	  thread_block();
 	}
 
 	sema->value--;
@@ -492,16 +493,21 @@ cond_broadcast (struct condition *cond, struct lock *lock)
 void
 donate(struct lock *lock,int new_priority,int times)
 {
+	ASSERT(lock!=NULL);
   struct thread *lock_holder = lock->holder;
+  /*if priority of donee is less then doner's , donation happend*/
   if (lock_holder->priority < new_priority)
   {
+	/*PRE:every new created doner's priority(we call this doner is
+	 * because dontation happends) MUST BE higher then donee's  priority.*/
     lock->max_priority = new_priority;
     lock_holder->been_donated = true;
     lock_holder->priority=new_priority;
+//
+//    if (!lock_holder->been_donated)
+//      lock_holder->prev_priority = lock_holder->priority;
 
-    if (!lock_holder->been_donated)
-      lock_holder->prev_priority = lock_holder->priority;
-
+    /*for the nested case*/
     if (lock_holder->status == THREAD_BLOCKED
     		&& lock_holder->target_lock != NULL
     		&& times > 0)
