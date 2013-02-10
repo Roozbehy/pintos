@@ -106,10 +106,13 @@ struct thread
     //Alarm clock
     int64_t sleep_time;
 
+    /*our implementation*/
     //Donation stuff
     //priority before donation
     int prev_priority;
     struct lock *target_lock;
+    int donee_priority; //store the priority of donee's
+    int donation_times;
     //indicated if this thread have donate it's priority to some other threads
     bool donator;
   };

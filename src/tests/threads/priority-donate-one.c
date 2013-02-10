@@ -37,7 +37,7 @@ test_priority_donate_one (void)
 
 /*code 
 lock_acquire(&lock){
- if (lock_holder->priority < cur->priority) {
+ if (lock_holder!=NULL&&lock_holder->priority < cur->priority) {
 	cur->donee_priority = lock_holder->priority // store lock_holder's priority to doner's donee_priority
 	lock->holding_queue.add_sorted(cur);  //add cur to this lock's holding queue,holding queue need to be sorted and the head is the highest priority one 
 	lock_holder->donate_times++; //increase the donation times
