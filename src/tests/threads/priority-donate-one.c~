@@ -36,15 +36,7 @@ test_priority_donate_one (void)
 */
 
 /*code 
-lock_acquire(&lock){
- if (lock_holder->priority < cur->priority) {
-	cur->donee_priority = lock_holder->priority // store lock_holder's priority to doner's donee_priority
-	lock->holding_queue.add_sorted(cur);  //add cur to this lock's holding queue,holding queue need to be sorted and the head is the highest priority one 
-	lock_holder->donate_times++; //increase the donation times
-	lock_holder->priority = cur->priority; //donate priority manualy
-	thread_block(cur);  //block current thread
-	}
-}
+a
 */
 
 
@@ -57,20 +49,6 @@ lock_acquire(&lock){
 /*
 lock_holder('main') release it's lock , lock_holder will switch back to original priority (donee_priority of the highest priority in this lock's holding queue), and decrement it's donate_times by 1 (in this test , it decrease from 1 to 0, which means lock_holder is not the donee any more) 
 */
-/*
-lock_release(&lock){
-	..
-	if (cur->donate_times > 1){
-	doner = pop_out(lock->holding_list)//this will return the highest_priority_thread in the holding list (becasue we insert as sorted ),and remove this from the holding list
-	original_priority = doner->donee_priority; 
-	cur->donate_times--; //decrease the donate times 
-	thread_set_priority(original_priority); //resume current (donee) to origial priority
-	thread_unblock(doner);	//doner thread unblocked , adding doner to the ready list and reschedule etc.
-	}
-	..
-}
-*/
-
   msg ("acquire2, acquire1 must already have finished, in that order.");
   msg ("This should be the last line before finishing this test.");
 }

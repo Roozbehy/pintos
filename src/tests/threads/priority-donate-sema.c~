@@ -39,10 +39,10 @@ test_priority_donate_sema (void)
 
   lock_init (&ls.lock);
   sema_init (&ls.sema, 0);
-  thread_create ("low", PRI_DEFAULT + 1, l_thread_func, &ls);//goto stage1,line 56
-  thread_create ("med", PRI_DEFAULT + 3, m_thread_func, &ls);//stage2:create "med" thread
-  thread_create ("high", PRI_DEFAULT + 5, h_thread_func, &ls);//stage4:create "high" thread,goto line 76
-  sema_up (&ls.sema);//stage8:-2->-1,"high" unblocked, 'high' is running ,goto line 77
+  thread_create ("low", PRI_DEFAULT + 1, l_thread_func, &ls);
+  thread_create ("med", PRI_DEFAULT + 3, m_thread_func, &ls);
+  thread_create ("high", PRI_DEFAULT + 5, h_thread_func, &ls);
+  sema_up (&ls.sema);
   msg ("Main thread finished.");
 }
 
@@ -51,9 +51,9 @@ l_thread_func (void *ls_)
 {
   struct lock_and_sema *ls = ls_;
 
-  lock_acquire (&ls->lock);//stage0,acquire success, L hoding a lock
+  lock_acquire (&ls->lock);
   msg ("Thread L acquired lock.");
-  sema_down (&ls->sema); //stage1:sema 0->-1, then thread which is calling sema_down(which is 'low')blocked ,goto line 43
+  sema_down (&ls->sema);
   msg ("Thread L downed semaphore.");
   lock_release (&ls->lock);
   msg ("Thread L finished.");
@@ -64,7 +64,7 @@ m_thread_func (void *ls_)
 {
   struct lock_and_sema *ls = ls_;
 
-  sema_down (&ls->sema); //stage:sema -1->-2, then thread "med" blocked ,goto line 44
+  sema_down (&ls->sema);
   msg ("Thread M finished.");
 }
 
@@ -73,10 +73,10 @@ h_thread_func (void *ls_)
 {
   struct lock_and_sema *ls = ls_;
 
-  lock_acquire (&ls->lock);//stage7:acquire the lock,falure,"high"blocked,goto line 45
-  msg ("Thread H acquired lock.");//stage9:
+  lock_acquire (&ls->lock);
+  msg ("Thread H acquired lock.");
 
-  sema_up (&ls->sema);//stage10:sema-1->0,M is unblocked ,now readyList:<M>,H is keep running.
-  lock_release (&ls->lock);//stage11:release the lock that H old
+  sema_up (&ls->sema);
+  lock_release (&ls->lock);
   msg ("Thread H finished.");
 }

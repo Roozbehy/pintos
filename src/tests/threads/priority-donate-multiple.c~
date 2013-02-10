@@ -35,45 +35,7 @@ test_priority_donate_multiple (void)
   lock_acquire (&a);
   lock_acquire (&b);
 
-  thread_create ("a", PRI_DEFAULT + 1, a_thread_func, &a); 
-/*after this thread is created , 'a' is tring to aquire lock_a , but lock_a is holding by 'main',
-so priority_donation happends , inside the donation procedure , 'main'thread's previous priority 
-shold be stored in 'a's donee_priority(which is the previouse priority of 'main'),then after the 
-lock_a is released , we just put 'main'(current running thread)'s priority back to it's previous 
-stored before donation happends (i.e to a_lock_holder's(thread'a') donee_priority )
-*/
-
-/*
-solutions:
-1.implements a new field:
-int donee_priority ;  
-into thread.h
-
-2.
-
-lock_acquire(&lock){
- if (lock_holder->priority < cur->priority) {
-	cur->donee_priority = lock_holder->priority // store lock_holder's priority to doner's donee_priority
-	lock->holding_queue.add_sorted(cur);  //add cur to this lock's holding queue,holding queue need to be sorted and the head is the highest priority one 
-	lock_holder->donate_times++; //increase the donation times
-	lock_holder->priority = cur->priority; //donate priority manualy
-	thread_block(cur);  //block current thread
-	}
-}
-
-lock_release(&lock){
-	..
-	if (cur->donate_times > 1){
-	doner = pop_out(lock->holding_list)//this will return the highest_priority_thread in the holding list (becasue we insert as sorted ),and remove this from the holding list
-	original_priority = doner->donee_priority; 
-	cur->donate_times--; //decrease the donate times 
-	thread_set_priority(original_priority); //resume current (donee) to origial priority
-	thread_unblock(doner);	//doner thread unblocked , adding doner to the ready list and reschedule etc.
-	}
-	..
-}
-
-*/
+  thread_create ("a", PRI_DEFAULT + 1, a_thread_func, &a);
   msg ("Main thread should have priority %d.  Actual priority: %d.",
        PRI_DEFAULT + 1, thread_get_priority ());
 

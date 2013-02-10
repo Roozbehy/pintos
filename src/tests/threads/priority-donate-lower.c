@@ -34,7 +34,8 @@ test_priority_donate_lower (void)
 /*
 thread_set_priority (priority){
 ..
-if (cur is been_donated) {
+if (cur->donate_times > 0 ) {  // means this thread is been donated at least onece (see test priority-donate-multiple) ; 
+	
 	//save his priority 
 	cur->pre_priority = get_priority();
 }
@@ -47,7 +48,7 @@ if (cur is been_donated) {
 /*
 lock_release (&lock){
 ..
-if (lock->holder is been donated){
+if (cur->donate_times > 0 ){
 	lock->holder->been_donated = false ;
 	thread_set_priority(lock->holder->previous_priority);  // this will auto reschedule it 
 }
