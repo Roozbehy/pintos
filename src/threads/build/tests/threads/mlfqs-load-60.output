@@ -1,4 +1,4 @@
-qemu -hda /tmp/GgXhvTxRlb.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/syvRWctyV6.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q -mlfqs run mlfqs-load-60

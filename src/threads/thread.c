@@ -93,7 +93,7 @@ thread_init (void)
   ASSERT (intr_get_level () == INTR_OFF);
 //'ASSERT' is program modification -- just ignore all of them 
   
-  //init the sleep list
+  //init the sleep list, for Alarm clock
   list_init(&sleep_list);
   
   lock_init (&tid_lock);//MUTEX
@@ -231,15 +231,17 @@ thread_create (const char *name, int priority,
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
 
-//FAQ:why block method doesnt have inputs? -Ans:the only possible for thread to be blocked is this thread is currently running , thus , iff thread been blocked , this thread is currently running 
+//FAQ:why block method doesnt have inputs?
+//-Ans:the only possible for thread to be blocked is this thread is currently running ,
+//thus , iff thread been blocked , this thread is currently running
 void
 thread_block (void) 
 {
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
-  thread_current ()->status = THREAD_BLOCKED;//make current running thread status as blocked,by this action the current thread will stop using CPU 
-  schedule ();//let next thread to use the CPU
+  thread_current ()->status = THREAD_BLOCKED;
+  schedule ();
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -251,21 +253,19 @@ thread_block (void)
    it may expect that it can atomically unblock a thread and
    update other data. */
 
-//YAN: the function of this method acutally is put threat 't' into the readylist
+//YAN: the function of this method actually is put threat 't' into the readylist
 void
 thread_unblock (struct thread *t) 
 {
-  enum intr_level old_level;//interrupt original level 
+  enum intr_level old_level;
   ASSERT (is_thread (t));
 
-//---
-  old_level = intr_disable ();//intr_disable:/src/threads/interrupt.c . Function:disables interrupts and returns the previouse interrupt status, thus , old_level is the previouse interrupt status. (see lastline)
-//these 3 sentences above is normarly using together , means shut down the interrupt , ( to avoid interrupt by anything else when this thread is running)
+  old_level = intr_disable ();
 
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT============================
   ASSERT (t->status == THREAD_BLOCKED);
-  list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);//THIS IS THE KEY SENTENCE:add thread 't' to ready_list by using push back ;(pushback :inserts the element at the END of the list,so that it become the back in list)
-  t->status = THREAD_READY;//and set thread 't' status as READY
+  list_insert_ordered(&ready_list, &t->elem, higher_priority, NULL);
+  t->status = THREAD_READY;
 
   if (!list_empty(&ready_list))
   {
@@ -283,8 +283,7 @@ thread_unblock (struct thread *t)
   }
 
 //=========BETWEEN IS IMPOSSIBLE TO INTERRUPT=============================
-  intr_set_level (old_level);//resume previouse interrupt status
-//---
+  intr_set_level (old_level);
 }
 
 /* Returns the name of the running thread. */
@@ -547,11 +546,10 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void) 
 {
-  if (list_empty (&ready_list)) // if readylist is empty , then return the idle_thread (idle thread is a dead loop for keeping CPU's tempreture.
+  if (list_empty (&ready_list))
     return idle_thread;
-  else // if ready list is not empty,list modification is in src/lib/kernal/list.h and list.c
+  else
     return list_entry (list_pop_front (&ready_list), struct thread, elem);
-//list_pop_front: return the first element in the LIST ,return it , and delete it from the orginal LIST 
 }
 
 /* Completes a thread switch by activating the new thread's page
@@ -641,7 +639,8 @@ allocate_tid (void)
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
-//Alarm clock
+//Alarm clock methods. 1 for adding a thread to sleep_list,
+//the other check the sleep_list to see if any threads needs to be woken up
 void
 thread_addToSleep(int64_t ticks)
 {
@@ -653,7 +652,7 @@ thread_addToSleep(int64_t ticks)
   if (cur != idle_thread)
   {
     cur->sleep_time = timer_ticks() + ticks;
-    //thread_blocked doesnt work. TODO: Check why
+    //thread_blocked() doesnt work
     cur->status = THREAD_BLOCKED;
     list_insert_ordered(&sleep_list, &cur->elem, less_sleep_time, NULL);
   }
@@ -685,7 +684,7 @@ thread_checkSleep()
 }
 
 //Compare sleep time of 2 threads,
-//will be used to vreate sleep_list
+//will be used to create sleep_list
 bool
 less_sleep_time(const struct list_elem *e1, const struct list_elem *e2, 
                void *aux)
@@ -697,7 +696,7 @@ less_sleep_time(const struct list_elem *e1, const struct list_elem *e2,
 }
 
 /*our implementation */
-//similar to above, but for priority comparision
+//similar to above, but for priority comparison
 bool 
 higher_priority (const struct list_elem *e1, const struct list_elem *e2, 
                void *aux)
