@@ -1,4 +1,4 @@
-qemu -hda /tmp/iqIqu06AXr.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/I55xnIRnPo.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-fifo
@@ -30,7 +30,7 @@ Executing 'priority-fifo':
 (priority-fifo) end
 Execution of 'priority-fifo' complete.
 Timer: 24 ticks
-Thread: 0 idle ticks, 25 kernel ticks, 0 user ticks
+Thread: 0 idle ticks, 24 kernel ticks, 0 user ticks
 Console: 1557 characters output
 Keyboard: 0 keys pressed
 Powering off...

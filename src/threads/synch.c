@@ -335,11 +335,13 @@ lock_release (struct lock *lock)
   //duc: remove lock from list and remove lock holder from lock
   lock->holder = NULL;
   list_remove(&lock->elem);
+  /*if any priority change to the donee happends inside the donation,it will save it and restore it after donation finished */
   if (cur-> been_donated_aux){
 	  thread_set_priority(cur->saved_priority);
 	  cur->been_donated_aux = false;
   }
   sema_up(&lock->semaphore);
+
   if (take_back_donation(cur))
     thread_yield();
 
@@ -508,6 +510,7 @@ donate(struct lock *lock,int new_priority,int times)
 //      lock_holder->prev_priority = lock_holder->priority;
 
     /*for the nested case*/
+    //recursively call donate
     if (lock_holder->status == THREAD_BLOCKED
     		&& lock_holder->target_lock != NULL
     		&& times > 0)
@@ -520,17 +523,20 @@ take_back_donation(struct thread *t)
 {
   if (t->been_donated)
   {
+	  /*every lock of this thread is released .*/
     if (list_empty(&t->lock_list))
     {
-    	t->been_donated = false;
     	t->priority = t->prev_priority;
+    	t->been_donated = false;
     	return true;
     }
+    	/*thread still holding some locks */
     else
     {
       bool need_yield = false;
       struct list_elem *e = list_min(&t->lock_list, higher_priority_lock, NULL);
-      if (t->priority > list_entry(e, struct lock, elem)->max_priority)
+      struct lock *min_lock =  list_entry(e, struct lock, elem);
+      if (t->priority > min_lock->max_priority)
         need_yield = true;
 
       t->priority = list_entry(e, struct lock, elem)->max_priority;
@@ -540,7 +546,7 @@ take_back_donation(struct thread *t)
   return false;
 }
 
-//duc: for sorting locks
+/*METHOD:sort lock list as it's max_priority*/
 bool
 higher_priority_lock (const struct list_elem *a, const struct list_elem *b,
 		void *aux)
