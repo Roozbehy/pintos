@@ -55,7 +55,7 @@ block_thread (void *lock_)
   msg ("Block thread spinning for 20 seconds...");
   start_time = timer_ticks ();
   while (timer_elapsed (start_time) < 20 * TIMER_FREQ)
-    continue;
+      continue;
 
   msg ("Block thread acquiring lock...");
   lock_acquire (lock);

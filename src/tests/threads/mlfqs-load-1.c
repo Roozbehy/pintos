@@ -24,11 +24,13 @@ test_mlfqs_load_1 (void)
   ASSERT (thread_mlfqs);
 
   msg ("spinning for up to 45 seconds, please wait...");
-
+  msg("load_avg: %d",load_avg);
   start_time = timer_ticks ();
   for (;;) 
     {
       load_avg = thread_get_load_avg ();
+      msg("load_avg: %d",load_avg);
+
       ASSERT (load_avg >= 0);
       elapsed = timer_elapsed (start_time) / TIMER_FREQ;
       if (load_avg > 100)

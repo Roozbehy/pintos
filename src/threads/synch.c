@@ -81,8 +81,8 @@ sema_down (struct semaphore *sema)
 void
 sema_down (struct semaphore *sema) {
 	enum intr_level old_level;
-	  ASSERT (sema != NULL);
-	  ASSERT (!intr_context ());
+	ASSERT (sema != NULL);
+	ASSERT (!intr_context ());
 	old_level = intr_disable(); //disable the interrupts
 
 	while (sema->value==0)
@@ -260,22 +260,29 @@ lock_acquire (struct lock *lock)
   //3.Thus the lock holder must be in the ready list
 
   //NEW
-  struct thread *cur = thread_current();
-  struct thread *lock_holder = lock->holder;
+  if (thread_mlfqs)
+  {
+    sema_down (&lock->semaphore);
+    lock->holder = thread_current ();
+  }
+  else
+  {
+    struct thread *cur = thread_current();
+    struct thread *lock_holder = lock->holder;
 
-  if (lock_holder != NULL)
-	  donate(lock, cur->priority, MAX_DEPTH);
+    if (lock_holder != NULL)
+	    donate(lock, cur->priority, MAX_DEPTH);
 
-  //stick lock to current thread
-  cur->target_lock = lock;
-  sema_down(&lock->semaphore);
-  lock->holder = thread_current();
+    //stick lock to current thread
+    cur->target_lock = lock;
+    sema_down(&lock->semaphore);
+    lock->holder = thread_current();
 
-  lock->max_priority = cur->priority;
-  list_insert_ordered(&cur->lock_list, &lock->elem,
+    lock->max_priority = cur->priority;
+    list_insert_ordered(&cur->lock_list, &lock->elem,
 		  higher_priority_lock, NULL);
-  cur->target_lock = NULL;
-
+    cur->target_lock = NULL;
+  }
   //OLD
   /*if (lock_holder!=NULL && lock_holder->priority < cur->priority)
   {
@@ -329,21 +336,30 @@ lock_release (struct lock *lock)
 
   //PRE LOCK HOLDER MUST BE THE LOWER ONE , AND HIGHER ONE IS STILL WAITING FOR THE LOWER ONE
   //THE HIGHER ONE 'S CURRENT PRIORITY IS LOWER ONE'S
-  struct thread *cur = thread_current();
+  if (thread_mlfqs)
+  {
+    lock->holder = NULL;
+ 	sema_up (&lock->semaphore);
+  }
+   else
+  {
+    struct thread *cur = thread_current();
 
   //NEW
   //duc: remove lock from list and remove lock holder from lock
-  lock->holder = NULL;
-  list_remove(&lock->elem);
+    lock->holder = NULL;
+    list_remove(&lock->elem);
   /*if any priority change to the donee happends inside the donation,it will save it and restore it after donation finished */
   /*been_donated_aux==is_any_priority_change_when_this_thread_is_in_the_case_of_donation*/
-  if (cur-> been_donated_aux){
+    if (cur-> been_donated_aux)
+    {
 	  thread_set_priority(cur->saved_priority);
 	  cur->been_donated_aux = false;
-  }
-  sema_up(&lock->semaphore);
+    }
+    sema_up(&lock->semaphore);
 
-  take_back_donation(cur);
+    take_back_donation(cur);
+  }
 }
 
 

@@ -9,7 +9,7 @@
 #ifndef FIXED_POINT_ARITHMETIC_H_
 #define FIXED_POINT_ARITHMETIC_H_
 
-#define F 16384 // (2^14)
+#define F (1 << 14) // (2^14)
 #define IntToFloat(N) (N*F) //convert N to Fixed Point
 #define FloatToIntZero(X) (X/F) //Convert x to integer (rounding toward zero)
 #define FloatToIntNearest(X) ((X>=0) ? ( (X+F/2)/F ) : ( (X-F/2)/F) ) //Convert x to integer (rounding to nearest)

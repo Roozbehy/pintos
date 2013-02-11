@@ -119,6 +119,11 @@ struct thread
     //indicated if this thread have donate it's priority to some other threads
     bool been_donated;
     bool been_donated_aux;
+
+    //roozbeh
+    int nice; /* Niceness, Roozbeh*/
+    int64_t recent_cpu; //Roozbeh
+
   };
 
 /* If false (default), use round-robin scheduler.
@@ -165,5 +170,12 @@ bool less_sleep_time(const struct list_elem*, const struct list_elem*, void*);
 
 //To compare priority
 bool higher_priority(const struct list_elem*, const struct list_elem*, void*);
+
+//Advanced Scheduler
+void priority_update(struct thread*, void *aux UNUSED); //Roozbeh
+int thread_get_recent_cpu(void);
+void recent_cpu_update(struct thread*, void *aux UNUSED); //Roozbeh
+int thread_get_load_avg(void);
+void load_avg_update(void); //Roozbeh
 
 #endif /* threads/thread.h */

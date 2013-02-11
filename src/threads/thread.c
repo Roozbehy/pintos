@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "devices/timer.h" //Roozbeh
 #include "threads/Fixed_Point_Arithmetic.h" //Roozbeh
 
 #ifdef USERPROG
@@ -63,6 +64,8 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
+//roozbeh
+int64_t load_avg;
 
 static void kernel_thread (thread_func *, void *aux);
 
@@ -132,6 +135,24 @@ void
 thread_tick (void) 
 {
   struct thread *t = thread_current ();
+  if (thread_mlfqs) //Roozbeh
+  {
+  	if (t != idle_thread)
+  	  t->recent_cpu = FloatPlusInt(t->recent_cpu, 1);
+
+  	if ((timer_ticks()) % TIMER_FREQ == 0)
+  	{
+  	  load_avg_update();
+  	  thread_foreach(recent_cpu_update, NULL);
+
+  	}
+
+  	if (timer_ticks() % 4 == 0)
+  	{
+  	  thread_foreach(priority_update, NULL);
+  	  intr_yield_on_return();
+  	}
+  }
 
   /* Update statistics. */
   if (t == idle_thread)
@@ -143,9 +164,11 @@ thread_tick (void)
   else
     kernel_ticks++;
 
+
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+
 }
 
 /* Prints thread statistics. */
@@ -225,6 +248,12 @@ thread_create (const char *name, int priority,
 ///  msg("xxxx ");
   thread_unblock (t);
 
+  if (thread_mlfqs)
+  { //Roozbeh
+    t->recent_cpu = thread_current()->recent_cpu;
+  	t->nice = thread_current()->nice;
+  	priority_update(t,NULL);
+  }
   return tid;
 }
 
@@ -352,6 +381,11 @@ thread_yield (void)
   
   ASSERT (!intr_context ());
 
+  if(thread_mlfqs)
+  {
+  	list_sort(&ready_list, higher_priority, NULL);
+  }
+
   old_level = intr_disable ();
   if (cur != idle_thread) 
     list_insert_ordered(&ready_list, &cur->elem, higher_priority, NULL);
@@ -389,11 +423,13 @@ thread_set_priority (int new_priority)
    * priority , it will update into saved_priority , after the donation
    * finished , thread's original priority will be set to the saved_priority
    */
-  if (cur->been_donated ){
-	  cur->saved_priority = new_priority; //save the priority change inside the donation procedure
-	  cur->been_donated_aux = true;
-  }else
-  cur->priority = new_priority;
+  if (cur->been_donated )
+  {
+	cur->saved_priority = new_priority; //save the priority change inside the donation procedure
+	cur->been_donated_aux = true;
+  }
+  else
+    cur->priority = new_priority;
 
   if (!list_empty(&ready_list))
   {
@@ -414,38 +450,45 @@ thread_get_priority (void)
 }
 
 /* Sets the current thread's nice value to NICE. */
-void
-thread_set_nice (int nice UNUSED) 
+void //roozbeh
+thread_set_nice (int new_nice)
 {
-  /* Not yet implemented. */
+  thread_current()->nice = new_nice;
+  priority_update(thread_current(),NULL);
+  struct thread *t = list_min(&ready_list, higher_priority, NULL);
+  if ((thread_current()->priority < t->priority)
+	&& !(list_empty(&ready_list)))
+	thread_yield();
 }
 
-struct list* thread_get_readylist (){
-	return &ready_list;
+struct list*
+thread_get_readylist (){
+  return &ready_list;
 }
 
 /* Returns the current thread's nice value. */
-int
+int //roozbeh
 thread_get_nice (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return thread_current()->nice;
 }
 
 /* Returns 100 times the system load average. */
-int
+int //roozbeh
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  int result = FloatMultInt(load_avg,100);
+  result = FloatToIntNearest(result);
+  return result;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
-int
+int  //roozbeh
 thread_get_recent_cpu (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  int recentCPU = FloatMultInt(thread_current()->recent_cpu,100);
+  recentCPU = FloatToIntNearest(recentCPU);
+  return recentCPU;
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -545,6 +588,13 @@ init_thread (struct thread *t, const char *name, int priority)
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
+
+  if (thread_mlfqs)
+  { //Roozbeh
+  	load_avg = 0;
+  	initial_thread->nice = 0;
+  	initial_thread->recent_cpu = 0;
+  }
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -739,4 +789,41 @@ lower_priority (const struct list_elem *e1, const struct list_elem *e2,
   return (t1->priority < t2->priority);
 }
 
+
+void
+priority_update(struct thread *t, void *aux UNUSED)
+{ //Roozbeh
+  int priority = PRI_MAX - (FloatToIntZero(t->recent_cpu) / 4)
+			- (t->nice * 2);
+  if (priority > PRI_MAX)
+    priority = PRI_MAX;
+  if (priority < PRI_MIN)
+	priority = PRI_MIN;
+  t->priority = priority;
+}
+
+
+void //Roozbeh //Checked
+load_avg_update()
+{
+  int ready_threads = (int) list_size(&ready_list) + 1;
+  if (thread_current() == idle_thread)
+	ready_threads--;
+  int tmp = FloatMultInt(load_avg,59);
+  tmp = FloatDivInt(tmp,60);
+  int tmp2 = IntToFloat(ready_threads);
+  tmp2 = FloatDivInt(tmp2,60);
+  int result = FloatPlusFloat(tmp,tmp2);
+  load_avg = result;
+}
+
+void //Roozbeh //int64
+recent_cpu_update(struct thread* t, void *aux UNUSED) {
+  int64_t top = FloatMultInt(load_avg,2);
+  int64_t bottom = FloatPlusInt(top,1);
+  int64_t coefficient = FloatDivFloat(top,bottom);
+  int64_t product = FloatMultFloat(coefficient,t->recent_cpu);
+  int64_t result = FloatPlusInt(product,t->nice);
+  t->recent_cpu = result;
+}
 
