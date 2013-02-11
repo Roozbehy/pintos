@@ -30,62 +30,52 @@ Roozbeh Zareian <rz1511@ic.ac.uk>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-3 files modified: thread.h, thread.c, timer.c
+*In timer.c:
 
-thread.h:	
-  Added to struct thread
-    int64_t sleepTime; //This holds the 'tick' time which
-                       //the thread will sleep until
+  void
+  timer_sleep (int64_t ticks) 
+  {
+    int64_t start = timer_ticks ();
 
-  Added methods declarations
-    void thread_addToSleep(void) //Add a thread to sleeping list
-    void thread_checkSleep(void) //Go through the sleeping list, 
-                                 //if slept time is reached,
-                                 //put the sleeping thread to ready list.
-  
-thread.c:
-  Added list:
-    static struct list sleeping_list //List of all sleeping threads
+    ASSERT (intr_get_level () == INTR_ON);
+    thread_addToSleep(ticks);
+  }
 
-  Added to thread_init()
-    list_init(&sleeping_list) //init the sleeping list
+We changed the while loop into a separate method call thread_addToSleep.
+This method will take the current thread and add it to the sleep_list for the time 'ticks'.
 
-  Added to init_thread()
-    t->sleepTime = 0; //init the sleep time
-  
-  Added to top of schedule()
-    thread_checkSleep(); //check if there's any thread should be woken up
-  
-  Implement thread_addToSleep() and thread_checkSleep()
+*In thread.h:
 
-timer.c:
-  Changed the timer_sleep() method
-    void timer_sleep(int64_t ticks) {
-      //int old_level = intr_disable();
-      //ASSERT (intr_get_level () == INTR_ON);
-      struct thread *t = thread_current();
-      t->sleepTime = timer_ticks() + ticks;
-      thread_addToSleep();
-      //intr_set_level(old_level);
-    {
+We added a new field for struct thread: int64_t sleep_time,
+which indicates the time at which the sleeping thread will be woken up.
+
+In thread_addToSleep method, sleep_time will be calculated by simply
+adding the current time to the total time the thread will sleep:
+
+  cur->sleep_time = timer_ticks() + ticks;
+
+*In thread.c:
+
+We declared a new list, called sleep_list (and also init it in thread_init):
+
+  static struct list sleep_list;
+
+sleep_list holds all sleeping threads, ordered from least time to sleep to highest,
+or to say, from the thread that needs to be woken up first to the last
+The ordering is 
+
+  void
+  thread_addToSleep(int64_t ticks)
+
+This function will add
+
+  void
+  thread_checkSleep()
 
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
-
-When timer_sleep() is called, the current thread's sleep time is set to current time + time to sleep,
-and it's added to the Sleeping List.
-
-Now the CPU can go on and do whatever (Actually there is nothing for it to do now, but we got rid of the busy waiting problem). 
-The sleeping list is only needed again after a call on schedule().
-
-//CHECK THIS
-When schedule() is called, the first thing it does is to check if a sleeping thread has 'slept' enough and wake it up.
-
-//TODO: interrupt handling
->> A3: What steps are taken to minimize the amount of time spent in
->> the timer interrupt handler?
 
 
 
@@ -115,12 +105,6 @@ When schedule() is called, the first thing it does is to check if a sleeping thr
 >> B1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
-
-thread.c:
-
-thread_set_priority();
-thread_unblock();
-next_thread_to_run();
 
 
 >> B2: Explain the data structure used to track priority donation.
