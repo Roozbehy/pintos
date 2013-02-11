@@ -62,40 +62,67 @@ We declared a new list, called sleep_list (and also init it in thread_init):
 
 sleep_list holds all sleeping threads, ordered from least time to sleep to highest,
 or to say, from the thread that needs to be woken up first to the last
-The ordering is 
+The ordering is taken care of by the auxiliary function
+
+  bool
+  less_sleep_time(const struct list_elem *e1, const struct list_elem *e2, void *aux)
+
+-----------------------------------------------------------------------------------------
+
+The sleep_list will be built by this function:
 
   void
   thread_addToSleep(int64_t ticks)
 
-This function will add
+It simply add the current thread to sleep_list, set it to THREAD_BLOCKED, and call schedule().
+
+-----------------------------------------------------------------------------------------
+
+Last thing we added is a check to wake up sleeping threads when time runs out
 
   void
   thread_checkSleep()
+
+This function will go through the sleep_list, check if any of the threads' sleep_time is up,
+then thread_unblock() it, i.e put it back to ready_list.
+
+This function will be called before each thread_tick() call, so it will be added to timer_interrupt().
+
 
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
+Interrupt is set to ON in our timer_sleep(). It doesnt affect the thread, 
+because it's added to the sleep_list. The act of blocking the thread is not affected by the interrupts
 
 
 ---- SYNCHRONIZATION ----
 
 
-//TODO
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
+timer_sleep() only effect the thread_current(), so there won't be a such problem.
+Threads will have to be put to RUNNING before it can be set to sleep.
 
-//TODO
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
 
+We trap the thread_addToSleep() inside a 'turning interruption off', using
+  old_level = intr_disable();
+  ...
+  intr_set_level(old_level);
+
 ---- RATIONALE ----
 
-//TODO
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+This is our initial design when starting the excercise. We planned to go back and improve it later,
+but the next parts turn out to be challenging and time consuming,
+so we ended up not doing any improvement.
 
              PRIORITY SCHEDULING
              ===================
