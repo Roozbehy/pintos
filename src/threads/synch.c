@@ -261,12 +261,15 @@ lock_acquire (struct lock *lock)
 
   //NEW
   if (thread_mlfqs)
-  {
+  { //roozbeh
+	//in case mlfqs, no need for donations
     sema_down (&lock->semaphore);
     lock->holder = thread_current ();
   }
   else
   {
+	//non- mlfqs case, do donation
+	//duc:
     struct thread *cur = thread_current();
     struct thread *lock_holder = lock->holder;
 
@@ -279,8 +282,7 @@ lock_acquire (struct lock *lock)
     lock->holder = thread_current();
 
     lock->max_priority = cur->priority;
-    list_insert_ordered(&cur->lock_list, &lock->elem,
-		  higher_priority_lock, NULL);
+    list_insert_ordered(&cur->lock_list, &lock->elem, higher_priority_lock, NULL);
     cur->target_lock = NULL;
   }
   //OLD
@@ -337,7 +339,8 @@ lock_release (struct lock *lock)
   //PRE LOCK HOLDER MUST BE THE LOWER ONE , AND HIGHER ONE IS STILL WAITING FOR THE LOWER ONE
   //THE HIGHER ONE 'S CURRENT PRIORITY IS LOWER ONE'S
   if (thread_mlfqs)
-  {
+  { //roozbeh
+	//no need for checking priority donations
     lock->holder = NULL;
  	sema_up (&lock->semaphore);
   }

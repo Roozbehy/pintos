@@ -431,6 +431,7 @@ thread_set_priority (int new_priority)
   else
     cur->priority = new_priority;
 
+  //go through ready_list and check priority
   if (!list_empty(&ready_list))
   {
     struct list_elem *e = list_max(&ready_list, higher_priority, NULL);
@@ -591,6 +592,7 @@ init_thread (struct thread *t, const char *name, int priority)
 
   if (thread_mlfqs)
   { //Roozbeh
+	//main thread init. From spec
   	load_avg = 0;
   	initial_thread->nice = 0;
   	initial_thread->recent_cpu = 0;
@@ -723,6 +725,7 @@ thread_addToSleep(int64_t ticks)
   
   if (cur != idle_thread)
   {
+	//time to wake up
     cur->sleep_time = timer_ticks() + ticks;
     //thread_blocked() doesnt work
     cur->status = THREAD_BLOCKED;
@@ -746,7 +749,6 @@ thread_checkSleep()
     if (t->sleep_time <=timer_ticks())
     {
       f = list_remove(e);
-      t = list_entry(e, struct thread, elem);
       thread_unblock(t);
       e = f;
     }

@@ -1,4 +1,4 @@
-qemu -hda /tmp/9NcAdME_ls.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/yhW3UfMjBu.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-condvar
@@ -41,8 +41,8 @@ Executing 'priority-condvar':
 (priority-condvar) Thread priority 21 woke up.
 (priority-condvar) end
 Execution of 'priority-condvar' complete.
-Timer: 24 ticks
-Thread: 0 idle ticks, 24 kernel ticks, 0 user ticks
+Timer: 25 ticks
+Thread: 0 idle ticks, 25 kernel ticks, 0 user ticks
 Console: 1667 characters output
 Keyboard: 0 keys pressed
 Powering off...
