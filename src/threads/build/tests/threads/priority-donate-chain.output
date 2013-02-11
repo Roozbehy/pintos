@@ -1,4 +1,4 @@
-qemu -hda /tmp/caPCMrCwP_.dsk -m 4 -net none -nographic -monitor null --no-kvm
+qemu -hda /tmp/FBbM04Hkc3.dsk -m 4 -net none -nographic -monitor null --no-kvm
 PiLo hda1
 Loading..........
 Kernel command line: -q run priority-donate-chain
@@ -48,8 +48,8 @@ Executing 'priority-donate-chain':
 (priority-donate-chain) main finishing with priority 0.
 (priority-donate-chain) end
 Execution of 'priority-donate-chain' complete.
-Timer: 25 ticks
-Thread: 0 idle ticks, 25 kernel ticks, 0 user ticks
+Timer: 26 ticks
+Thread: 0 idle ticks, 26 kernel ticks, 0 user ticks
 Console: 2636 characters output
 Keyboard: 0 keys pressed
 Powering off...

@@ -30,78 +30,99 @@ Roozbeh Zareian <rz1511@ic.ac.uk>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-3 files modified: thread.h, thread.c, timer.c
+*In timer.c:
 
-thread.h:	
-  Added to struct thread
-    int64_t sleepTime; //This holds the 'tick' time which
-                       //the thread will sleep until
+  void
+  timer_sleep (int64_t ticks) 
+  {
+    int64_t start = timer_ticks ();
 
-  Added methods declarations
-    void thread_addToSleep(void) //Add a thread to sleeping list
-    void thread_checkSleep(void) //Go through the sleeping list, 
-                                 //if slept time is reached,
-                                 //put the sleeping thread to ready list.
-  
-thread.c:
-  Added list:
-    static struct list sleeping_list //List of all sleeping threads
+    ASSERT (intr_get_level () == INTR_ON);
+    thread_addToSleep(ticks);
+  }
 
-  Added to thread_init()
-    list_init(&sleeping_list) //init the sleeping list
+We changed the while loop into a separate method call thread_addToSleep.
+This method will take the current thread and add it to the sleep_list for the time 'ticks'.
 
-  Added to init_thread()
-    t->sleepTime = 0; //init the sleep time
-  
-  Added to top of schedule()
-    thread_checkSleep(); //check if there's any thread should be woken up
-  
-  Implement thread_addToSleep() and thread_checkSleep()
+*In thread.h:
 
-timer.c:
-  Changed the timer_sleep() method
-    void timer_sleep(int64_t ticks) {
-      //int old_level = intr_disable();
-      //ASSERT (intr_get_level () == INTR_ON);
-      struct thread *t = thread_current();
-      t->sleepTime = timer_ticks() + ticks();
-      thread_addToSleep();
-      //intr_set_level(old_level);
-    {
+We added a new field for struct thread: int64_t sleep_time,
+which indicates the time at which the sleeping thread will be woken up.
+
+In thread_addToSleep method, sleep_time will be calculated by simply
+adding the current time to the total time the thread will sleep:
+
+  cur->sleep_time = timer_ticks() + ticks;
+
+*In thread.c:
+
+We declared a new list, called sleep_list (and also init it in thread_init):
+
+  static struct list sleep_list;
+
+sleep_list holds all sleeping threads, ordered from least time to sleep to highest,
+or to say, from the thread that needs to be woken up first to the last
+The ordering is taken care of by the auxiliary function
+
+  bool
+  less_sleep_time(const struct list_elem *e1, const struct list_elem *e2, void *aux)
+
+-----------------------------------------------------------------------------------------
+
+The sleep_list will be built by this function:
+
+  void
+  thread_addToSleep(int64_t ticks)
+
+It simply add the current thread to sleep_list, set it to THREAD_BLOCKED, and call schedule().
+
+-----------------------------------------------------------------------------------------
+
+Last thing we added is a check to wake up sleeping threads when time runs out
+
+  void
+  thread_checkSleep()
+
+This function will go through the sleep_list, check if any of the threads' sleep_time is up,
+then thread_unblock() it, i.e put it back to ready_list.
+
+This function will be called before each thread_tick() call, so it will be added to timer_interrupt().
+
 
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
-When timer_sleep() is called, the current thread's sleep time is set to current time + time to sleep,
-and it's added to the Sleeping List.
-
-Now the CPU can go on and do whatever (Actually there is nothing for it to do now, but we got rid of the busy waiting problem). 
-The sleeping list is only needed again after a call on schedule().
-
-//CHECK THIS
-When schedule() is called, the first thing it does is to check if a sleeping thread has 'slept' enough and wake it up.
-
-//TODO: interrupt handling
-
->> A3: What steps are taken to minimize the amount of time spent in
->> the timer interrupt handler?
-
+Interrupt is set to ON in our timer_sleep(). It doesnt affect the thread, 
+because it's added to the sleep_list. The act of blocking the thread is not affected by the interrupts
 
 
 ---- SYNCHRONIZATION ----
 
+
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
+timer_sleep() only effect the thread_current(), so there won't be a such problem.
+Threads will have to be put to RUNNING before it can be set to sleep.
+
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
+
+We trap the thread_addToSleep() inside a 'turning interruption off', using
+  old_level = intr_disable();
+  ...
+  intr_set_level(old_level);
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+This is our initial design when starting the excercise. We planned to go back and improve it later,
+but the next parts turn out to be challenging and time consuming,
+so we ended up not doing any improvement.
 
              PRIORITY SCHEDULING
              ===================
@@ -111,6 +132,72 @@ When schedule() is called, the first thing it does is to check if a sleeping thr
 >> B1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
+
+*thread.h:
+
+  struct thread
+    +int prev_priority;
+    +struct lock *target_lock;
+    +struct list lock_list;
+    +int saved_priority;
+    +bool been_donated;
+    +bool been_donated_aux;
+
+  +bool higher_priority(const struct list_elem*, const struct list_elem*, void*);
+
+*thread.c:
+
+  thread_create:
+    +t->been_donated_aux = false;
+
+  thread_unblock:
+    Lots of changes involving checking if current thread has lower priority
+    than another in ready_list and yield it
+
+  thread_yield:
+    Only changed the list_push method in to list_insert_ordered, using higher_priority
+
+  thread_set_priority:
+    Again, lots of changes involves dealing with donations and checking priority
+
+  init_thread:
+    +t->prev_priority = priority;
+    +t->been_donated = false;
+    +list_init(&t->lock_list);
+    Only adding the inits for the new fields
+
+  +bool higher_priority (const struct list_elem *e1, const struct list_elem *e2, void *aux)
+    Aux func for sorting priority
+
+*synch.h:
+
+  struct semaphore
+    +int priority
+
+  struct lock
+    +struct list_elem elem;
+    We decided to use a list of locks, so this is for that
+    +int max_priority;
+    Max priority from the threads wanting this lock
+
+  +void donate(struct lock *lock, int new_priority, int times);
+
+  +bool take_back_donation(struct thread *thread);
+
+
+  +bool higher_priority_lock (const struct list_elem *a,
+		const struct list_elem *b, void *aux);
+
+  +bool higher_priority_cond (const struct list_elem *a,
+		const struct list_elem *b, void *aux);
+
+  Above are aux funcs to sort the lists
+
+*synch.c:
+
+  
+  
+
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a

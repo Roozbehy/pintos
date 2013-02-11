@@ -133,6 +133,71 @@ so we ended up not doing any improvement.
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+*thread.h:
+
+  struct thread
+    +int prev_priority;
+    +struct lock *target_lock;
+    +struct list lock_list;
+    +int saved_priority;
+    +bool been_donated;
+    +bool been_donated_aux;
+
+  +bool higher_priority(const struct list_elem*, const struct list_elem*, void*);
+
+*thread.c:
+
+  thread_create:
+    +t->been_donated_aux = false;
+
+  thread_unblock:
+    Lots of changes involving checking if current thread has lower priority
+    than another in ready_list and yield it
+
+  thread_yield:
+    Only changed the list_push method in to list_insert_ordered, using higher_priority
+
+  thread_set_priority:
+    Again, lots of changes involves dealing with donations and checking priority
+
+  init_thread:
+    +t->prev_priority = priority;
+    +t->been_donated = false;
+    +list_init(&t->lock_list);
+    Only adding the inits for the new fields
+
+  +bool higher_priority (const struct list_elem *e1, const struct list_elem *e2, void *aux)
+    Aux func for sorting priority
+
+*synch.h:
+
+  struct semaphore
+    +int priority
+
+  struct lock
+    +struct list_elem elem;
+    We decided to use a list of locks, so this is for that
+    +int max_priority;
+    Max priority from the threads wanting this lock
+
+  +void donate(struct lock *lock, int new_priority, int times);
+
+  +bool take_back_donation(struct thread *thread);
+
+
+  +bool higher_priority_lock (const struct list_elem *a,
+		const struct list_elem *b, void *aux);
+
+  +bool higher_priority_cond (const struct list_elem *a,
+		const struct list_elem *b, void *aux);
+
+  Above are aux funcs to sort the lists
+
+*synch.c:
+
+  
+  
+
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a

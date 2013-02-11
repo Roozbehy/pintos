@@ -32,6 +32,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
+#define MAX_DEPTH 8
 /* Initializes semaphore SEMA to VALUE.  A semaphore is a
    nonnegative integer along with two atomic operators for
    manipulating it:
@@ -263,8 +264,7 @@ lock_acquire (struct lock *lock)
   struct thread *lock_holder = lock->holder;
 
   if (lock_holder != NULL)
-	  //8 is nested depth max
-	  donate(lock, cur->priority, 8);
+	  donate(lock, cur->priority, MAX_DEPTH);
 
   //stick lock to current thread
   cur->target_lock = lock;
@@ -336,14 +336,15 @@ lock_release (struct lock *lock)
   lock->holder = NULL;
   list_remove(&lock->elem);
   /*if any priority change to the donee happends inside the donation,it will save it and restore it after donation finished */
+  /*been_donated_aux==is_any_priority_change_when_this_thread_is_in_the_case_of_donation*/
   if (cur-> been_donated_aux){
 	  thread_set_priority(cur->saved_priority);
 	  cur->been_donated_aux = false;
   }
   sema_up(&lock->semaphore);
 
-  if (take_back_donation(cur))
-    thread_yield();
+  take_back_donation(cur);
+}
 
 
   //OLD
@@ -368,7 +369,7 @@ lock_release (struct lock *lock)
   //sema_up (&lock->semaphore); */
 
   //intr_set_level(old_level);
-}
+//}
 
 /* Returns true if the current thread holds LOCK, false
    otherwise.  (Note that testing whether some other thread holds
@@ -511,39 +512,51 @@ donate(struct lock *lock,int new_priority,int times)
 
     /*for the nested case*/
     //recursively call donate
-    if (lock_holder->status == THREAD_BLOCKED
+    if (lock_holder->status == THREAD_BLOCKED //lock_holder is not current but in the lock holder list
     		&& lock_holder->target_lock != NULL
     		&& times > 0)
       donate(lock_holder->target_lock, new_priority, times-1);
   }
 }
 
-bool
-take_back_donation(struct thread *t)
+
+void
+take_back_donation(struct thread *cur)
 {
-  if (t->been_donated)
+	ASSERT (cur==thread_current());
+  if (cur->been_donated)
   {
 	  /*every lock of this thread is released .*/
-    if (list_empty(&t->lock_list))
+    if (list_empty(&cur->lock_list))
     {
-    	t->priority = t->prev_priority;
-    	t->been_donated = false;
-    	return true;
+    	cur->priority = cur->prev_priority;
+    	cur->been_donated = false;
+
+    	thread_yield();
     }
-    	/*thread still holding some locks */
+    	/*thread still holding some locks(<case multiple2> line 54:lock_release (&a) */
     else
     {
-      bool need_yield = false;
-      struct list_elem *e = list_min(&t->lock_list, higher_priority_lock, NULL);
-      struct lock *min_lock =  list_entry(e, struct lock, elem);
-      if (t->priority > min_lock->max_priority)
+      bool need_yield;
+      struct list_elem *e = list_min(&cur->lock_list, higher_priority_lock, NULL);
+      struct lock *max_lock =  list_entry(e, struct lock, elem);
+      /*current priority is bigger then max lock priority->yield
+       * put back to the ready list and let system decide which one need
+       * to run next -- avoid troubles*/
+      if (cur->priority > max_lock->max_priority)
         need_yield = true;
-
-      t->priority = list_entry(e, struct lock, elem)->max_priority;
-      return need_yield;
+      /*current priority less or equal to max lock priority->keep running*/
+      else
+        	need_yield=false;
+      /*set current priority to the same level lock's max priority ->avoid unexpected troubles
+       * (originally donee have lower priority ,it's high priority is come from the donner,
+       * so why not?)*/
+      cur->priority = max_lock->max_priority;
+      if (need_yield)
+    	  thread_yield();
     }
   }
-  return false;
+  /*other case : leave it running */
 }
 
 /*METHOD:sort lock list as it's max_priority*/
@@ -562,12 +575,6 @@ bool
 higher_priority_cond (const struct list_elem *e1, const struct list_elem *e2,
                void *aux)
 {
-  /*struct semaphore *se1 = &list_entry(e1,struct semaphore_elem,elem)->semaphore;
-  struct semaphore *se2 = &list_entry(e2,struct semaphore_elem,elem)->semaphore;
-  struct thread *t1 = list_entry(list_begin(&se1->waiters), struct thread, elem);
-  struct thread *t2 = list_entry(list_begin(&se2->waiters), struct thread, elem);
-  return (t1->priority > t2->priority);
-  */
   struct thread *t1,*t2;
   const struct list_elem *se1,*se2;
   se1=list_front(&list_entry(e1,struct semaphore_elem,elem)->semaphore.waiters);

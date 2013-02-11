@@ -11,6 +11,8 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/Fixed_Point_Arithmetic.h" //Roozbeh
+
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -382,8 +384,12 @@ thread_set_priority (int new_priority)
   struct thread *cur = thread_current();
   cur->prev_priority = new_priority;
 
-  //For donate-low case
-  if (cur->been_donated && !cur->been_donated_aux){
+  /*deal with case priority-donate-lower*/
+  /*if the running thread is been donated,and if you want to reduce it's
+   * priority , it will update into saved_priority , after the donation
+   * finished , thread's original priority will be set to the saved_priority
+   */
+  if (cur->been_donated ){
 	  cur->saved_priority = new_priority; //save the priority change inside the donation procedure
 	  cur->been_donated_aux = true;
   }else

@@ -43,7 +43,7 @@ bool lock_held_by_current_thread (const struct lock *);
 void donate(struct lock *lock, int new_priority, int times);
 
 //helper function,
-bool take_back_donation(struct thread *thread);
+void take_back_donation(struct thread *thread);
 
 
 /* Condition variable. */
