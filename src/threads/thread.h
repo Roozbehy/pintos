@@ -178,4 +178,8 @@ void recent_cpu_update(struct thread*, void *aux UNUSED); //Roozbeh
 int thread_get_load_avg(void);
 void load_avg_update(void); //Roozbeh
 
+//For part 2
+struct thread *get_thread(tid_t);
+
+
 #endif /* threads/thread.h */

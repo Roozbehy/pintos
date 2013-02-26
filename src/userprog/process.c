@@ -31,15 +31,29 @@ process_execute (const char *file_name)
   char *fn_copy;
   tid_t tid;
 
+  //arg_size is the size of the whole cmd line,
+  //which is also the size of the file name
+  size_t arg_size;
+  
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
-  strlcpy (fn_copy, file_name, PGSIZE);
+  //added arg_size =
+  arg_size = strlcpy (fn_copy, file_name, PGSIZE);
+
+  //max filename size to 4kb, from spec
+  if (arg_size > 4096)
+  {
+    tid = TID_ERROR;
+    goto tid_error;
+  }
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+
+tid_error:
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -54,12 +68,58 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
+  //New Declarations
+  int argc = 0;
+  char *token, *save_ptr;
+  //argv stores the address of arguments
+  //max number of args set to 128, from spec
+  uint32_t argv[128];
+  size_t arg_size;
+  //----------------
+
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
+
+  /*BEGIN-CREATE-TOKEN-----------------------------------------*/
+  //setup the argv
+  for (token = strtok_r(file_name, " ", &save_ptr); token != NULL;
+       token = strtok_r(NULL, " ", &save_ptr))
+    argv[argc++] = (uint32_t) (token - file_name);
+  
+  arg_size = save_ptr - file_name + 1;
+  /*END-CREATE-TOKEN-------------------------------------------*/
+
+  /*BEGIN-SETUP-STACK-----------------------------------------*/
+
+  if (success)
+  {
+    void *esp = PHYS_BASE - arg_size;
+    uint32_t argv_base = (uint32_t) esp;
+    memcpy(esp, file_name, arg_size);
+    //Word aligned access
+    //Round stack ptr down to a multp of 4 ...
+    esp = (void*) ROUND_DOWN ((uint32_t) esp, 4);
+    // ... then push
+    *((uint32_t*) (esp-=4)) = 0;
+
+    int i;
+    for (i = argc-1; i >= 0; --i)
+      *((uint32_t*) (esp-=4)) = argv[i] + argv_base;
+
+    uint32_t esp_tmp = (uint32_t) esp;
+    *((uint32_t*) (esp-=4)) = esp_tmp;
+    *((uint32_t*) (esp-=4)) = argc;
+    *((uint32_t*) (esp-=4)) = 0;
+
+    if_.esp = esp;
+  }
+
+  /*END-SETUP-STACK-------------------------------------------*/
+
 
   /* If load failed, quit. */
   palloc_free_page (file_name);

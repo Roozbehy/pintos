@@ -829,3 +829,20 @@ recent_cpu_update(struct thread* t, void *aux UNUSED) {
   t->recent_cpu = result;
 }
 
+//For part 2
+//Return the thread from the input tid
+struct thread*
+get_thread(tid_t tid)
+{
+  struct list_elem *e;
+  struct thread *t;
+  t = NULL;
+  for (e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e))
+  {
+    t = list_entry(e, struct thread, allelem);
+    if (t->tid == tid)
+      return t;
+  }
+  return t;
+}
+
