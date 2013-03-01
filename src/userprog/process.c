@@ -25,6 +25,7 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
+//duc
 tid_t
 process_execute (const char *file_name) 
 {
@@ -59,6 +60,7 @@ tid_error:
   return tid;
 }
 
+//duc
 /* A thread function that loads a user process and starts it
    running. */
 static void
@@ -145,18 +147,41 @@ start_process (void *file_name_)
 
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
+
+//duc
 int
 process_wait (tid_t child_tid UNUSED) 
 {
   return -1;
+
+  /*
+  struct thread *t;
+  int ret;
+  t = get_thread(child_tid);
+  if (t == NULL)
+    return -1;
+
+  sema_down(&t);
+  ret = t->status;
+  thread_unblock(t);
+
+  return ret;
+  */
 }
 
+//duc
 /* Free the current process's resources. */
 void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+
+  //
+  //sema_up(&cur);
+  //intr_disable();
+  //thread_block();
+  //intr_enable();
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -174,6 +199,9 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+
+  //
+  //printf("%s: exit(%i)\n", cur->name, cur->ret);
 }
 
 /* Sets up the CPU for running user code in the current
