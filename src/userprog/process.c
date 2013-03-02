@@ -35,24 +35,46 @@ process_execute (const char *file_name)
   //arg_size is the size of the whole cmd line,
   //which is also the size of the file name
   size_t arg_size;
-  
+
+  //for str token
+  char *save, *token;
+  //for getting file name
+  const char *fn_only_ptr;
+  //max size of cmd line = 128 lines
+  char fn_only[128];
+  //new struct load_info
+  struct load_info info;
+ 
+ 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
-  //added arg_size =
+  //added arg_size, to get the size of the passed stuff,
+  //including filename and args
   arg_size = strlcpy (fn_copy, file_name, PGSIZE);
 
   //max filename size to 4kb, from spec
-  if (arg_size > 4096)
+  if (arg_size > 128)
   {
     tid = TID_ERROR;
     goto tid_error;
   }
 
+  //get the first string into file name to pass to thread_create
+  fn_only_ptr = file_name;
+  int i = 0;
+  while (*fn_only_ptr != '\0' && *fn_only_ptr != ' ')
+    fn_only[i++] = *(fn_only_ptr++);
+  fn_only[i] = '\0';
+
+  //init the struct load_info and pass it to thread_create as aux arg
+  info.file_name = fn_copy;
+  sema_init(&info.load_sema, 0);
+
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (fn_only, PRI_DEFAULT, start_process, &info);
 
 tid_error:
   if (tid == TID_ERROR)
@@ -63,10 +85,15 @@ tid_error:
 //duc
 /* A thread function that loads a user process and starts it
    running. */
+//changed file_name_ to info_
+//now this will use struct load_info, which also have the filename
 static void
-start_process (void *file_name_)
+start_process (void *info_)
 {
-  char *file_name = file_name_;
+  //load_info,
+  struct load_info *info = info_;
+  //added info->
+  char *file_name = info->file_name;
   struct intr_frame if_;
   bool success;
 
@@ -77,7 +104,20 @@ start_process (void *file_name_)
   //max number of args set to 128, from spec
   uint32_t argv[128];
   size_t arg_size;
+ 
   //----------------
+
+  /*BEGIN-CREATE-TOKEN-----------------------------------------*/
+  //setup the argv
+  //tokenise the cmd line, storing them to stack
+  //argc holds number of args
+  for (token = strtok_r(file_name, " ", &save_ptr); token != NULL;
+       token = strtok_r(NULL, " ", &save_ptr))
+    argv[argc++] = (uint32_t) (token - file_name);
+
+  arg_size = save_ptr - file_name + 1;
+  /*END-CREATE-TOKEN-------------------------------------------*/
+
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -85,16 +125,6 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
-
-  /*BEGIN-CREATE-TOKEN-----------------------------------------*/
-  //setup the argv
-  for (token = strtok_r(file_name, " ", &save_ptr); token != NULL;
-       token = strtok_r(NULL, " ", &save_ptr))
-    argv[argc++] = (uint32_t) (token - file_name);
-  
-  arg_size = save_ptr - file_name + 1;
-  /*END-CREATE-TOKEN-------------------------------------------*/
-
   /*BEGIN-SETUP-STACK-----------------------------------------*/
 
   if (success)
@@ -122,6 +152,10 @@ start_process (void *file_name_)
 
   /*END-SETUP-STACK-------------------------------------------*/
 
+  //after setting up stacks, 
+  //sema up and back to process_execute
+  sema_up (&info->load_sema);
+  info->success = success;
 
   /* If load failed, quit. */
   palloc_free_page (file_name);

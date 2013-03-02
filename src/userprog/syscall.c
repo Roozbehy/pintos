@@ -6,10 +6,30 @@
 
 static void syscall_handler (struct intr_frame *);
 
+//bunch of syscalls
+//set it here cuz all the includes are here, not in header files
+static int sys_write(int fd, const void *buffer, unsigned length);
+static int sys_exit(int status);
+static int sys_halt(void);
+static int sys_exec(const char *cmd);
+static int sys_create(const char *file, unsigned initial_size);
+static int sys_remove(const char *file);
+static int sys_open(const char *file);
+static int sys_close(int fd);
+static int sys_read(int fd, void *buffer, unsigned size);
+static int sys_wait(tid_t pid);
+static int sys_filesize(int fd);
+static int sys_tell(int fd);
+static int sys_seek(int fd, unsigned pos);
+
+
 
 //Handler type
-typedef void (* handler) (int *, uint32_t, uint32_t, uint32_t);
-//list of handlers
+//takes 3 args(which are the actual args when syscall is evoked)
+//returns the syscall number
+typedef int (* handler) (uint32_t, uint32_t, uint32_t);
+//list of handlers,
+//set arbitrarily to 128 :|
 static handler syscall_vec[128];
 
 void
@@ -22,7 +42,7 @@ syscall_init (void)
 }
 
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
+syscall_handler (struct intr_frame *f)
 {
   /*
   printf ("system call!\n");
@@ -30,28 +50,30 @@ syscall_handler (struct intr_frame *f UNUSED)
   */
 
   handler h;
-  uint32_t *p;
-  uint32_t ret;
-  p = f->esp;
-  h = syscall_vec[*p];
+  int *syscall_number;
+  syscall_number = f->esp;
+  
+  h = syscall_vec[*syscall_number];
 
-  h (&ret, *(p + 1), *(p + 2), *(p + 3));
-  if (ret != 1)
-    f->eax = ret;
+  f->eax = h (*(syscall_number + 1),
+              *(syscall_number + 2),
+              *(syscall_number + 3));
 }
 
-static void
-sys_write (int *ret, int fd, const void *buffer, unsigned length)
+static int
+sys_write (int fd, const void *buffer, unsigned length)
 {
-  if (fd == 1)
-    putbuf (buffer, length);
 
-  *ret = length;
 }
 
-static void
-sys_exit (int *ret, int status)
+static int
+sys_exit (int status)
 {
-  ret = status;
-  thread_exit();
+
 }
+
+
+
+
+
+
