@@ -53,30 +53,37 @@ process_execute (const char *file_name)
   fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
-  //added arg_size, to get the size of the passed stuff,
-  //including filename and args
-  arg_size = strlcpy (fn_copy, file_name, PGSIZE);
+
+  strlcpy (fn_copy, file_name, PGSIZE);
 
   //max filename size to 4kb, from spec
+  /*old
   if (arg_size > 128)
   {
     tid = TID_ERROR;
     goto tid_error;
   }
+  */
 
+  /* old
   //get the first string into file name to pass to thread_create
   fn_only_ptr = file_name;
   int i = 0;
   while (*fn_only_ptr != '\0' && *fn_only_ptr != ' ')
     fn_only[i++] = *(fn_only_ptr++);
   fn_only[i] = '\0';
+  */
+
+  token = strtok_r(fn_copy, " ", &save);
 
   //init the struct load_info and pass it to thread_create as aux arg
+  /* old
   info.file_name = fn_copy;
   sema_init(&info.load_sema, 0);
+  */
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (fn_only, PRI_DEFAULT, start_process, &info);
+  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
 
 tid_error:
   if (tid == TID_ERROR)
@@ -90,36 +97,28 @@ tid_error:
 //changed file_name_ to info_
 //now this will use struct load_info, which also have the filename
 static void
-start_process (void *info_)
+start_process (void *file_name_)
 {
   //load_info,
-  struct load_info *info = info_;
+  //struct load_info *info = info_;
   //added info->
-  char *file_name = info->file_name;
+  //char *file_name = info->file_name;
+  char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
 
   //New Declarations
   int argc = 0;
-  char *token, *save_ptr;
+  char *token, *save_ptr = NULL;
+  /*old
   //argv stores the address of arguments
   //max number of args set to 128, from spec
   uint32_t argv[128];
+  */
+  char **argv = palloc_get_page(0);
   size_t arg_size;
  
   //----------------
-
-  /*BEGIN-CREATE-TOKEN-----------------------------------------*/
-  //setup the argv
-  //tokenise the cmd line, storing them to stack
-  //argc holds number of args
-  for (token = strtok_r(file_name, " ", &save_ptr); token != NULL;
-       token = strtok_r(NULL, " ", &save_ptr))
-    argv[argc++] = (uint32_t) (token - file_name);
-
-  arg_size = save_ptr - file_name + 1;
-  /*END-CREATE-TOKEN-------------------------------------------*/
-
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -129,8 +128,25 @@ start_process (void *info_)
   success = load (file_name, &if_.eip, &if_.esp);
   /*BEGIN-SETUP-STACK-----------------------------------------*/
 
+  // BEGIN-CREATE-TOKEN-----------------------------------------
+  //setup the argv
+  //tokenise the cmd line, storing them to stack
+  //argc holds number of args
+  for (token = strtok_r(file_name_, " ", &save_ptr); token != NULL;
+       token = strtok_r(NULL, " ", &save_ptr))
+  {
+    argv[argc] = palloc_get_page(0);
+    strlcpy(argv[argc], token, PGSIZE);
+    argc++;
+  }
+
+  //END-CREATE-TOKEN-------------------------------------------
+  
+  success = load (argv[0], &if_.eip, &if_.esp);
+
   if (success)
   {
+    /* old
     void *esp = PHYS_BASE - arg_size;
     uint32_t argv_base = (uint32_t) esp;
     memcpy(esp, file_name, arg_size);
@@ -150,14 +166,48 @@ start_process (void *info_)
     *((uint32_t*) (esp-=4)) = 0;
 
     if_.esp = esp;
+    */
+    int i, j;
+    char **argv_addr = palloc_get_page(0);
+
+    for (i = argc - 1; i >= 0; i--)
+    {
+      for (j = strlen(argv[i]); j >= 0; j--)
+      {
+        if_.esp -= 1;
+        *(char *) if_.esp = (argv[i][j]);
+      }
+      argv_addr[i] = (char *) if_.esp;
+    }
+
+    if_.esp -= (if_.esp - if_.esp & 4);
+    if_.esp -= 4;
+    *(char **) if_.esp = NULL;
+    
+    for (i = argc - 1; i >= 0; i--)
+    {
+      if_.esp -= 4;
+      *(char **) if_.esp = argv_addr[i];
+    }
+
+    char **addr = (char **) if_.esp;
+    if_.esp -= 4;
+    *(char ***) if_.esp = addr;
+    if_.esp -= 4;
+    *(int *) if_.esp = argc;
+    if_.esp -= 4;
+    *(void **) if_.esp = 0;
+    palloc_free_page(argv_addr);
   }
 
   /*END-SETUP-STACK-------------------------------------------*/
 
+  /* old
   //after setting up stacks, 
   //sema up and back to process_execute
   sema_up (&info->load_sema);
   info->success = success;
+  */
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -189,6 +239,7 @@ int
 process_wait (tid_t child_tid UNUSED) 
 {
   //TODO
+  while (true)
   return -1;
 }
 
@@ -202,6 +253,7 @@ process_exit (void)
   struct fd_elem *fd;
   
   //closes all files current thread has opened
+  /*
   while (!list_empty (&cur->files))
   {
     fd = list_entry(list_pop_front (&cur->files), struct fd_elem, thread_elem);
@@ -209,6 +261,7 @@ process_exit (void)
     list_remove (&fd->elem);
     free (fd);
   }
+  */
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -228,10 +281,10 @@ process_exit (void)
     }
 
   //closes file that was loaded to memory
-  file_close (cur->image_on_disk);
+  //file_close (cur->image_on_disk);
   
   //print termination msg
-  printf("%s: exit(%i)\n", cur->name, cur->ret);
+  //printf("%s: exit(%i)\n", cur->name, cur->ret);
 
   //resumes parent process that is waiting for this process
   //TODO sema_up (&cur->wait);
