@@ -18,6 +18,8 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+#include "userprog/syscall.h"
+
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
@@ -186,21 +188,8 @@ start_process (void *info_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  //TODO
   return -1;
-
-  /*
-  struct thread *t;
-  int ret;
-  t = get_thread(child_tid);
-  if (t == NULL)
-    return -1;
-
-  sema_down(&t);
-  ret = t->status;
-  thread_unblock(t);
-
-  return ret;
-  */
 }
 
 //duc
@@ -210,12 +199,16 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-
-  //
-  //sema_up(&cur);
-  //intr_disable();
-  //thread_block();
-  //intr_enable();
+  struct fd_elem *fd;
+  
+  //closes all files current thread has opened
+  while (!list_empty (&cur->files))
+  {
+    fd = list_entry(list_pop_front (&cur->files), struct fd_elem, thread_elem);
+    file_close (fd->file);
+    list_remove (&fd->elem);
+    free (fd);
+  }
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -234,8 +227,14 @@ process_exit (void)
       pagedir_destroy (pd);
     }
 
-  //
-  //printf("%s: exit(%i)\n", cur->name, cur->ret);
+  //closes file that was loaded to memory
+  file_close (cur->image_on_disk);
+  
+  //print termination msg
+  printf("%s: exit(%i)\n", cur->name, cur->ret);
+
+  //resumes parent process that is waiting for this process
+  //TODO sema_up (&cur->wait);
 }
 
 /* Sets up the CPU for running user code in the current
