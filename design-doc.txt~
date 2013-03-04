@@ -8,9 +8,9 @@
 
 >> Fill in the names and email addresses of your group members.
 
-FirstName LastName <email@domain.example>
-FirstName LastName <email@domain.example>
-FirstName LastName <email@domain.example>
+Duc Ngo <dn1111@imperial.ac.uk>
+Roozbeh Zareian <rz1511@imperial.ac.uk>
+Ningyuan Lu <nl1010@imperial.ac.uk>
 
 ---- PRELIMINARIES ----
 
@@ -30,19 +30,28 @@ FirstName LastName <email@domain.example>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+
+
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe how you implemented argument parsing.  How do
 >> you arrange for the elements of argv[] to be in the right order?
 >> How do you avoid overflowing the stack page?
 
+
+
 ---- RATIONALE ----
 
 >> A3: Why does Pintos implement strtok_r() but not strtok()?
 
+strtok_r() returns a pointer and strtok() doesn't.
+
 >> A4: In Pintos, the kernel separates commands into a executable name
 >> and arguments.  In Unix-like systems, the shell does this
 >> separation.  Identify at least two advantages of the Unix approach.
+
+
+
 
                  SYSTEM CALLS
                  ============
@@ -53,14 +62,98 @@ FirstName LastName <email@domain.example>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+In thread.h:
+  //return status
+  int ret;
+
+  //true iff it has been waited before
+  bool already_waited; 
+
+  //determines if the execution success or not
+  bool success; 
+
+  //semaphore for process_wait()
+  struct semaphore wait; 
+
+  //semaphore for process_execute()
+  struct semaphore load_wait; 
+
+  //list of its child processes
+  struct list child_list; 
+
+  //list_elem for child_list
+  struct list_elem child_elem;
+
+  //list of files that is opened by the process
+  struct list opened_files; 
+
+  //parent process of this process
+  struct thread *parent; 
+
+  //executable file on the disk
+  struct file *image_on_disk; 
+
+  //Helper functions for task 2.
+  //Get thread from its tid
+  struct thread *
+  get_thread(tid_t tid);
+
+  //get thread from the provided list and a tid.
+  //used to get a child thread from a child_list
+  struct thread *
+  get_child_thread(struct list *l, tid_t tid);
+
+In syscall.c:
+  We added all the syscalls that is in the spec: sys_exit, sys_write etc. Total of 13
+
+  //handler for syscall
+  static handler syscall_vec[SYSCALL_NUM];
+  //locks
+  static struct lock lock;
+  static struct lock fid_lock;
+  //file list 
+  static struct list files;
+
+  //find a file by its fd from the file_list of a process
+  static struct file *
+  find_file(int fd)
+
+  //Returns a fid to use for a new file
+  //starting from 2 (0 and 1 taken by IO)
+  static int
+  allocate_fid(void)
+
+  //Check validity of a pointer, address etc
+  static bool
+  valid_pointer(const void *vaddr)
+
+In syscall.h:
+  //This struct represent an elem for a file, which will be used in creating a file list
+  //for a process
+  //Contains the file ptr, a file descriptor, its list_elem and its thread elem
+  struct fd_elem
+  {
+    int fd;
+    struct file *file;
+    struct list_elem elem;
+    struct list_elem thread_elem;
+  };
+
 >> B2: Describe how file descriptors are associated with open files.
 >> Are file descriptors unique within the entire OS or just within a
 >> single process?
+
+When a file is opened, its pointer and id will be saved to a struct fd_elem.
+After a process is finished, its files will be closed hence the fd will be freed.
+When another process opened another file, the same file id may be granted to that file.
+So file descriptor is not unique within the entire OS, just within a single process
 
 ---- ALGORITHMS ----
 
 >> B3: Describe your code for reading and writing user data from the
 >> kernel.
+
+
 
 >> B4: Suppose a system call causes a full page (4,096 bytes) of data
 >> to be copied from user space into the kernel.  What is the least
@@ -69,8 +162,12 @@ FirstName LastName <email@domain.example>
 >> for a system call that only copies 2 bytes of data?  Is there room
 >> for improvement in these numbers, and how much?
 
+
+
 >> B5: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
+
+
 
 >> B6: Any access to user program memory at a user-specified address
 >> can fail due to a bad pointer value.  Such accesses must cause the
@@ -86,12 +183,16 @@ FirstName LastName <email@domain.example>
 >> paragraphs, describe the strategy or strategies you adopted for
 >> managing these issues.  Give an example.
 
+
+
 ---- SYNCHRONIZATION ----
 
 >> B7: The "exec" system call returns -1 if loading the new executable
 >> fails, so it cannot return before the new executable has completed
 >> loading.  How does your code ensure this?  How is the load
 >> success/failure status passed back to the thread that calls "exec"?
+
+
 
 >> B8: Consider parent process P with child process C.  How do you
 >> ensure proper synchronization and avoid race conditions when P
@@ -100,16 +201,24 @@ FirstName LastName <email@domain.example>
 >> terminates without waiting, before C exits?  After C exits?  Are
 >> there any special cases?
 
+
+
 ---- RATIONALE ----
 
 >> B9: Why did you choose to implement access to user memory from the
 >> kernel in the way that you did?
 
+
+
 >> B10: What advantages or disadvantages can you see to your design
 >> for file descriptors?
 
+
+
 >> B11: The default tid_t to pid_t mapping is the identity mapping.
 >> If you changed it, what advantages are there to your approach?
+
+
 
                SURVEY QUESTIONS
                ================

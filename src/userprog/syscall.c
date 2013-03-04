@@ -26,6 +26,7 @@ static struct lock lock;
 static struct lock fid_lock;
 static struct list files;
 
+//syscalls
 static void
 sys_exit(int status);
 
@@ -65,7 +66,7 @@ sys_seek(int fd, unsigned pos);
 static int
 sys_filesize(int fd);
 
-
+//find a file by its fd from the file_list of a process
 static struct file *
 find_file(int fd)
 {
@@ -79,6 +80,7 @@ find_file(int fd)
     }
   return NULL;
 }
+
 void
 syscall_init(void)
 {
@@ -331,6 +333,7 @@ sys_filesize(int fd)
   return (int) file_length(f);
 }
 
+//Check validity of a pointer, address etc
 static bool
 valid_pointer(const void *vaddr)
 {

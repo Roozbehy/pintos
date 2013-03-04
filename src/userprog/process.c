@@ -36,8 +36,6 @@ process_execute(const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-
-  const char *fn_ptr;
   size_t length;
   struct thread *cur, *child;
 
@@ -54,6 +52,8 @@ process_execute(const char *file_name)
     }
 
   char *fn_tmp = palloc_get_page(0);
+  if (fn_tmp == NULL)
+    return TID_ERROR;
   strlcpy(fn_tmp, fn_copy, PGSIZE);
 
   char *tmp = NULL;
@@ -87,18 +87,21 @@ start_process(void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
-  int argc = 1;
-  size_t size;
+  int argc = 0;
   char *token = NULL, *save_ptr = NULL;
   char **argv = palloc_get_page(0);
 
-  argv[0] = strtok_r(file_name, " ", &save_ptr);
-
-  while ((token = strtok_r(NULL, " ", &save_ptr)))
+  for (token = strtok_r(file_name, " ", &save_ptr); token != NULL; token =
+      strtok_r(NULL, " ", &save_ptr))
     {
       argv[argc] = palloc_get_page(0);
+      if (token == NULL )
+        {
+          success = false;
+          goto exit;
+        }
       strlcpy(argv[argc], token, PGSIZE);
-      ++argc;
+      argc++;
     }
 
   /* Initialize interrupt frame and load executable. */
@@ -106,7 +109,6 @@ start_process(void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-
   //Roozbeh
   success = load(argv[0], &if_.eip, &if_.esp);
   struct thread *cur = thread_current();
@@ -150,7 +152,7 @@ start_process(void *file_name_)
 
   /* If load failed, quit. */
   palloc_free_page(file_name);
-  if (!success)
+  exit: if (!success)
     thread_exit();
 
   /* Start the user process by simulating a return from an

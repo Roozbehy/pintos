@@ -101,15 +101,14 @@ struct thread
 
   int ret; /* return status */
   bool already_waited; /* true iff it has been waited before */
-  bool success;
+  bool success; /* determines if the execution success or not */
   struct semaphore wait; /* semaphore for process_wait() */
-  struct semaphore load_wait;
-  struct list child_list; /* contains all its child process */
+  struct semaphore load_wait; /* semaphore for process_execute() */
+  struct list child_list; /* list of its child processes */
   struct list_elem child_elem; /* list_elem for child_list*/
-  struct thread *parent; /* parent process */
-
+  struct list opened_files; /* list of files that is opened by the process */
+  struct thread *parent; /* parent process of this process */
   struct file *image_on_disk; /* executable file on the disk */
-  struct list opened_files; /* all opened files */
 #endif
 
   /* Owned by thread.c. */
@@ -172,8 +171,13 @@ int
 thread_get_recent_cpu(void);
 int
 thread_get_load_avg(void);
+
+//Helper functions for task 2.
+//Get thread from its tid
 struct thread *
 get_thread(tid_t tid);
+//get thread from the provided list and a tid.
+//used to get a child thread from a child_list
 struct thread *
 get_child_thread(struct list *l, tid_t tid);
 

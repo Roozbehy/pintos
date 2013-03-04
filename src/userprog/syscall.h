@@ -3,12 +3,14 @@
 #include <list.h>
 #include "filesys/file.h"
 
-struct fd_elem {
-	int fd;
-	struct file *file;
-	struct list_elem elem;
-	struct list_elem thread_elem;
+struct fd_elem
+{
+  int fd;
+  struct file *file;
+  struct list_elem elem;
+  struct list_elem thread_elem;
 };
-void syscall_init(void);
+void
+syscall_init(void);
 
 #endif /* userprog/syscall.h */
