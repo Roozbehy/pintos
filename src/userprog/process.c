@@ -95,12 +95,13 @@ start_process(void *file_name_)
       strtok_r(NULL, " ", &save_ptr))
     {
       argv[argc] = palloc_get_page(0);
-      if (token == NULL )
+      if (token == NULL)
         {
           success = false;
           goto exit;
         }
-      strlcpy(argv[argc], token, PGSIZE);
+      argv[argc] = token;
+      //strlcpy(argv[argc], token, PGSIZE);
       argc++;
     }
 
@@ -177,6 +178,8 @@ start_process(void *file_name_)
 int
 process_wait(tid_t child_tid)
 {
+  if (child_tid == TID_ERROR)
+    return -1;
   struct thread *child;
   child = get_child_thread(&thread_current()->child_list, child_tid);
 
