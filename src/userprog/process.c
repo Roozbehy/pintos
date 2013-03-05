@@ -26,7 +26,7 @@ static bool
 load(const char *cmdline, void
 (**eip)(void), void **esp);
 #define COMMAND_LINE_LIMIT 128
-
+#define MAX_ARG 64
 /* Starts a new thread running a user program loaded from
  FILENAME.  The new thread may be scheduled (and may even exit)
  before process_execute() returns.  Returns the new process's
@@ -43,8 +43,13 @@ process_execute(const char *file_name)
    Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page(0);
   if (fn_copy == NULL)
-    return TID_ERROR;
+    {
+      tid = TID_ERROR;
+      goto error;
+    }
+
   length = strlcpy(fn_copy, file_name, PGSIZE);
+
   if (length > COMMAND_LINE_LIMIT)
     {
       tid = TID_ERROR;
@@ -59,13 +64,15 @@ process_execute(const char *file_name)
   char *tmp = NULL;
   char *actual_name = strtok_r(fn_copy, " ", &tmp);
 
+  cur = thread_current();
+
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create(actual_name, PRI_DEFAULT, start_process, fn_tmp);
+
   error: if (tid == TID_ERROR)
     palloc_free_page(fn_copy);
   else
     {
-      cur = thread_current();
       child = get_thread(tid);
       list_push_back(&cur->child_list, &child->child_elem);
       child->parent = cur;
@@ -95,11 +102,6 @@ start_process(void *file_name_)
       strtok_r(NULL, " ", &save_ptr))
     {
       argv[argc] = palloc_get_page(0);
-      if (token == NULL)
-        {
-          success = false;
-          goto exit;
-        }
       argv[argc] = token;
       //strlcpy(argv[argc], token, PGSIZE);
       argc++;
@@ -148,11 +150,12 @@ start_process(void *file_name_)
       palloc_free_page(argv_address);
     }
 
-  cur->success = success;
   sema_up(&cur->load_wait);
+  cur->success = success;
 
   /* If load failed, quit. */
   palloc_free_page(file_name);
+
   exit: if (!success)
     thread_exit();
 
@@ -178,8 +181,6 @@ start_process(void *file_name_)
 int
 process_wait(tid_t child_tid)
 {
-  if (child_tid == TID_ERROR)
-    return -1;
   struct thread *child;
   child = get_child_thread(&thread_current()->child_list, child_tid);
 

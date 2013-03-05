@@ -30,6 +30,13 @@ Ningyuan Lu <nl1010@imperial.ac.uk>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+We defined
+//Max length of the command lines, including the filename and the args
+#define COMMAND_LINE_LIMIT 128
+
+//Max number of arguments allowed to be passed
+//For now we just put it as 64. May be changed if needed
+#define MAX_ARG 64
 
 
 ---- ALGORITHMS ----
@@ -38,20 +45,51 @@ Ningyuan Lu <nl1010@imperial.ac.uk>
 >> you arrange for the elements of argv[] to be in the right order?
 >> How do you avoid overflowing the stack page?
 
+** Summary
 
+The main purpose of process_execute() is to receives the args and run the process.
+First we check if the total length of the filename and the args exceeded the COMMAND_LINE_LIMIT,
+then we extract the name of the function out, separate it from the args then pass it to start_process
+
+In start_process(), we use strtok_r to tokenise the args and the file name and put them into
+an array of char, called argv. So the actual file name will be stored in argv[0], and the arguments followed.
+
+The number of args will be stored in argc.
+
+If load is successful, we start going down the stack, first putting the addresses of the args, followed by
+the pointer to the address of argv array, then the argc, a return address (0). 
+Basically we followed the spec.
+
+** To arrange the elems in the right order
+
+We put the file name then the args in that order when going up the stack.
+Then for putting the addresses, we go backwards from the last to the first argument.
+
+** Avoiding overflowing
+
+The stack page is quite huge, while we limit the length of our file name into 128 bytes.
+Anything bigger than that will result in an error.
 
 ---- RATIONALE ----
 
 >> A3: Why does Pintos implement strtok_r() but not strtok()?
 
 strtok_r() returns a pointer and strtok() doesn't.
+In strtok_r(), that pointer is provided by the caller. That pointer can then 
+be saved and used later. Handy.
 
 >> A4: In Pintos, the kernel separates commands into a executable name
 >> and arguments.  In Unix-like systems, the shell does this
 >> separation.  Identify at least two advantages of the Unix approach.
 
+In Unix approach, the system will not have to spend as much time in the kernel,
+reducing probability of kernel being harmed.
 
+Also, if bad things happen when pasing commands, it will happen in the shell.
+The kernel is safe.
 
+Unix also provide user flexibility when passing arguments. For example, using ';' to pass 
+more than 1 line of commands
 
                  SYSTEM CALLS
                  ============
@@ -146,14 +184,20 @@ In syscall.h:
 When a file is opened, its pointer and id will be saved to a struct fd_elem.
 After a process is finished, its files will be closed hence the fd will be freed.
 When another process opened another file, the same file id may be granted to that file.
-So file descriptor is not unique within the entire OS, just within a single process
+So file descriptor is not unique within the entire OS, just within a single process.
 
 ---- ALGORITHMS ----
 
 >> B3: Describe your code for reading and writing user data from the
 >> kernel.
 
+First of all, both write and read will be wrapped inside a lock.
+Then we check the address, see if it's valid, by using valid_pointer.
+If no problem found, we proceeded to check what pointer that represent,
+a STDOUT or a STDIN or an address to another file, and go on accordingly.
 
+STDOUT will write to the file, STDIN will read it. If the fd represent another file,
+find it and continue accodingly to what we're doing, read or write.
 
 >> B4: Suppose a system call causes a full page (4,096 bytes) of data
 >> to be copied from user space into the kernel.  What is the least
@@ -162,7 +206,7 @@ So file descriptor is not unique within the entire OS, just within a single proc
 >> for a system call that only copies 2 bytes of data?  Is there room
 >> for improvement in these numbers, and how much?
 
-
+//TODO
 
 >> B5: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
@@ -208,17 +252,24 @@ So file descriptor is not unique within the entire OS, just within a single proc
 >> B9: Why did you choose to implement access to user memory from the
 >> kernel in the way that you did?
 
-
+We check it by verifying the validity of a user provided pointer.
+This is pretty straight foward and doesn't consume much time or space,
+so we thought we could just do it.
 
 >> B10: What advantages or disadvantages can you see to your design
 >> for file descriptors?
 
+** Advantage: 
+It makes searching for the fd easy. 
+We can access the file and the thread that holds that fd easily.
 
+** Disadvantage:
+Creating to many of such struct may be space consuming.
 
 >> B11: The default tid_t to pid_t mapping is the identity mapping.
 >> If you changed it, what advantages are there to your approach?
 
-
+We didn't touch the mapping.
 
                SURVEY QUESTIONS
                ================
