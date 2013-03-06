@@ -183,13 +183,14 @@ sys_write(int fd, const void *buffer, unsigned length)
 static void
 sys_halt(void)
 {
-  //not sure
+  //not sure, is that it?
   shutdown_power_off();
 }
 
 static int
 sys_wait(tid_t pid)
 {
+  //stuff will be done in process_wait. Do that!
   return process_wait(pid);
 }
 

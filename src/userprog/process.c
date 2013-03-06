@@ -27,6 +27,7 @@ load(const char *cmdline, void
 (**eip)(void), void **esp);
 #define COMMAND_LINE_LIMIT 128
 #define MAX_ARG 64
+
 /* Starts a new thread running a user program loaded from
  FILENAME.  The new thread may be scheduled (and may even exit)
  before process_execute() returns.  Returns the new process's
@@ -56,6 +57,7 @@ process_execute(const char *file_name)
       goto error;
     }
 
+  //temp string, will hold the whole thing, for later use on thread_create
   char *fn_tmp = palloc_get_page(0);
   if (fn_tmp == NULL)
     return TID_ERROR;
@@ -64,20 +66,21 @@ process_execute(const char *file_name)
   char *tmp = NULL;
   char *actual_name = strtok_r(fn_copy, " ", &tmp);
 
-  cur = thread_current();
-
   /* Create a new thread to execute FILE_NAME. */
+  //use fn_tmp here cuz we tokenised fn_copy before
   tid = thread_create(actual_name, PRI_DEFAULT, start_process, fn_tmp);
 
   error: if (tid == TID_ERROR)
     palloc_free_page(fn_copy);
   else
     {
+      cur = thread_current();
       child = get_thread(tid);
       list_push_back(&cur->child_list, &child->child_elem);
       child->parent = cur;
 
       /* Wait for load() finishing */
+      //Wait for child to load
       sema_down(&child->load_wait);
       if (!child->success)
         return TID_ERROR;
@@ -97,14 +100,16 @@ start_process(void *file_name_)
   int argc = 0;
   char *token = NULL, *save_ptr = NULL;
   char **argv = palloc_get_page(0);
+  int i;
+  int j;
 
+  //tokenising, take a look at the strtok_r example usage
   for (token = strtok_r(file_name, " ", &save_ptr); token != NULL; token =
       strtok_r(NULL, " ", &save_ptr))
     {
       argv[argc] = palloc_get_page(0);
-      argv[argc] = token;
-      //strlcpy(argv[argc], token, PGSIZE);
-      argc++;
+      //put the tokens into argv[argc]
+      argv[argc++] = token;
     }
 
   /* Initialize interrupt frame and load executable. */
@@ -120,27 +125,41 @@ start_process(void *file_name_)
     {
       //Roozbeh
       char **argv_address = palloc_get_page(0);
-      int i;
-      int j;
+
+      //first, set the string values
+      //we will go down the stack, starting with the last argument
       for (i = argc - 1; i >= 0; i--)
         {
           for (j = strlen(argv[i]); j >= 0; j--)
             {
+              //moving the esp
               (if_.esp -= 1);
+              //copying from **argv
               *(char*) if_.esp = (argv[i][j]);
             }
+
+          //save the addresses to argv_address[], to be used below
           argv_address[i] = (char*) if_.esp;
         }
-      if_.esp -= ((if_.esp - if_.esp) & 4); //word-alignment
+
+      //word-alignment
+      if_.esp -= ((if_.esp - if_.esp) & 4);
       (if_.esp -= 4);
       *(char**) if_.esp = NULL;
 
+      //next, set up the addresses
       for (i = argc - 1; i >= 0; i--)
         {
           (if_.esp -= 4);
+          //now we can copy the address from argv_address[] created above
+          //to put it to the stack
           *(char**) if_.esp = argv_address[i];
         }
+
+      //save the address if the actual file name to addr
       char **addr = (char**) if_.esp;
+
+      //finally, put the file name in, then the argc and a return address 0
       if_.esp -= 4;
       *(char***) if_.esp = addr;
       if_.esp -= 4;
@@ -150,13 +169,14 @@ start_process(void *file_name_)
       palloc_free_page(argv_address);
     }
 
+  //Child loaded, go back to process_execute
   sema_up(&cur->load_wait);
   cur->success = success;
 
   /* If load failed, quit. */
   palloc_free_page(file_name);
 
-  exit: if (!success)
+  if (!success)
     thread_exit();
 
   /* Start the user process by simulating a return from an
@@ -184,8 +204,14 @@ process_wait(tid_t child_tid)
   struct thread *child;
   child = get_child_thread(&thread_current()->child_list, child_tid);
 
-  if (child == NULL || child->already_waited)
+  //-1 if child is NULL or not direct child or the child has already been
+  //called wait()
+  if (child == NULL || child->already_waited
+      || child->parent != thread_current())
     return -1;
+
+  //Set sema down for the child.
+  //Wait for the child to finish
   sema_down(&child->wait);
   child->already_waited = true;
   return child->ret;
@@ -226,6 +252,8 @@ process_exit(void)
     }
   file_close(cur->image_on_disk);
   printf("%s: exit(%i)\n", cur->name, cur->ret);
+
+  //Now that this has exited, go back to its parent
   sema_up(&cur->wait);
 
 }

@@ -21,6 +21,8 @@ Ningyuan Lu <nl1010@imperial.ac.uk>
 >> preparing your submission, other than the Pintos documentation, course
 >> text, lecture notes, and course staff.
 
+We refer to a few sources on creating the struct fd_elem, mostly by talking to friends
+
                ARGUMENT PASSING
                ================
 
@@ -62,8 +64,8 @@ Basically we followed the spec.
 
 ** To arrange the elems in the right order
 
-We put the file name then the args in that order when going up the stack.
-Then for putting the addresses, we go backwards from the last to the first argument.
+We start with the last arguments in the file name, then go down from there
+to the actual file name.
 
 ** Avoiding overflowing
 
@@ -211,7 +213,7 @@ find it and continue accodingly to what we're doing, read or write.
 >> B5: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
 
-
+//TODO
 
 >> B6: Any access to user program memory at a user-specified address
 >> can fail due to a bad pointer value.  Such accesses must cause the
@@ -227,7 +229,7 @@ find it and continue accodingly to what we're doing, read or write.
 >> paragraphs, describe the strategy or strategies you adopted for
 >> managing these issues.  Give an example.
 
-
+//TODO
 
 ---- SYNCHRONIZATION ----
 
@@ -236,7 +238,7 @@ find it and continue accodingly to what we're doing, read or write.
 >> loading.  How does your code ensure this?  How is the load
 >> success/failure status passed back to the thread that calls "exec"?
 
-
+//TODO
 
 >> B8: Consider parent process P with child process C.  How do you
 >> ensure proper synchronization and avoid race conditions when P
@@ -245,7 +247,7 @@ find it and continue accodingly to what we're doing, read or write.
 >> terminates without waiting, before C exits?  After C exits?  Are
 >> there any special cases?
 
-
+//TODO
 
 ---- RATIONALE ----
 

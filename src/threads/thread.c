@@ -61,15 +61,24 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
 static void
 kernel_thread(thread_func *, void *aux);
 
-static void idle(void *aux UNUSED);
-static struct thread *running_thread(void);
-static struct thread *next_thread_to_run(void);
-static void init_thread(struct thread *, const char *name, int priority);
-static bool is_thread(struct thread *) UNUSED;
-static void * alloc_frame(struct thread *, size_t size);
-static void schedule(void);
-void thread_schedule_tail(struct thread *prev);
-static tid_t allocate_tid(void);
+static void
+idle(void *aux UNUSED);
+static struct thread *
+running_thread(void);
+static struct thread *
+next_thread_to_run(void);
+static void
+init_thread(struct thread *, const char *name, int priority);
+static bool
+is_thread(struct thread *) UNUSED;
+static void *
+alloc_frame(struct thread *, size_t size);
+static void
+schedule(void);
+void
+thread_schedule_tail(struct thread *prev);
+static tid_t
+allocate_tid(void);
 
 /* Initializes the threading system by transforming the code
  that's currently running into a thread.  This can't work in
@@ -552,27 +561,50 @@ thread_schedule_tail(struct thread *prev)
    pull out the rug under itself.  (We don't free
    initial_thread because its memory was not obtained via
    palloc().) */
-  // Roozbeh
+
+  /*
+   if (prev != NULL && prev->status == THREAD_DYING && prev != initial_thread)
+   {
+   ASSERT(prev != cur);
+   palloc_free_page(prev);
+   }
+   */
+
+  //Modified for task 2
+  //Thread will not be freed immediately
+  //So that the thread's parent can still retrieve this guy's exit status
+  //after it has exited before the parent calling wait
   if (prev != NULL && prev->status == THREAD_DYING && prev != initial_thread)
     {
       ASSERT(prev != cur);
-      //also for task 2
+      //We only free it when it has no parent, or its parent is dead
       if (prev->parent == NULL || prev->parent->status == THREAD_DYING)
         palloc_free_page(prev);
+      //If the parent is alive,...
       else
         {
           struct thread *t;
+          //...we go through this thread's child_list...
           struct list *l = &prev->child_list;
           while (!list_empty(l))
             {
               t = list_entry (list_pop_front (l), struct thread, child_elem);
+              //...see if the child is alive or not
               if (t->status == THREAD_DYING)
+                //free the child if it's dead, cuz we don't need it
+                //now that this guy is going to die anyways
                 palloc_free_page(t);
               else
+                //or set its parent to NULL, no need to assign another parent
+                //it will then be freed later as it has no parent
                 t->parent = NULL;
             }
+          //Now the thread's dead children has been freed, but
+          //the thread itself has not, so its parent can still retrieve it later
+          //when it calls wait(), and it will be freed after its parent is dead
         }
     }
+
 }
 
 /* Schedules a new process.  At entry, interrupts must be off and
@@ -651,6 +683,7 @@ get_child_thread(struct list *l, tid_t tid)
 
   struct list_elem *e;
   struct thread *t;
+  enum intr_level old_level = intr_disable();
 
   ASSERT(l != NULL);
 
@@ -660,5 +693,6 @@ get_child_thread(struct list *l, tid_t tid)
       if (t->tid == tid)
         return t;
     }
+  intr_set_level(old_level);
   return NULL;
 }

@@ -21,6 +21,8 @@ Ningyuan Lu <nl1010@imperial.ac.uk>
 >> preparing your submission, other than the Pintos documentation, course
 >> text, lecture notes, and course staff.
 
+We refer to a few sources on creating the struct fd_elem, mostly by talking to friends
+
                ARGUMENT PASSING
                ================
 
@@ -62,8 +64,8 @@ Basically we followed the spec.
 
 ** To arrange the elems in the right order
 
-We put the file name then the args in that order when going up the stack.
-Then for putting the addresses, we go backwards from the last to the first argument.
+We start with the last arguments in the file name, then go down from there
+to the actual file name.
 
 ** Avoiding overflowing
 
@@ -140,6 +142,9 @@ In thread.h:
   //used to get a child thread from a child_list
   struct thread *
   get_child_thread(struct list *l, tid_t tid);
+
+In thread.c:
+  We modified thread_schedule_tail(), which helps implementing synchronisation for wait()
 
 In syscall.c:
   We added all the syscalls that is in the spec: sys_exit, sys_write etc. Total of 13
