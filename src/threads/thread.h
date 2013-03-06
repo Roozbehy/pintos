@@ -100,7 +100,7 @@ struct thread
   uint32_t *pagedir; /* Page directory. */
 
   int ret; /* return status */
-  bool already_waited; /* true iff it has been waited before */
+  bool waited; /* true iff it has been waited before */
   bool success; /* determines if the execution success or not */
   struct semaphore wait; /* semaphore for process_wait() */
   struct semaphore load_wait; /* semaphore for process_execute() */

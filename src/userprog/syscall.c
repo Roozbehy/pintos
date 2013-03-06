@@ -21,10 +21,12 @@ allocate_fid(void);
 typedef int
 (*handler)(uint32_t, uint32_t, uint32_t);
 #define SYSCALL_NUM 50
-static handler syscall_vec[SYSCALL_NUM];
+static handler syscalls[SYSCALL_NUM];
 static struct lock lock;
 static struct lock fid_lock;
 static struct list files;
+void
+syscall_assign(void);
 
 //syscalls
 static void
@@ -85,24 +87,31 @@ void
 syscall_init(void)
 {
   intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
-  syscall_vec[SYS_EXIT] = (handler) sys_exit;
-  syscall_vec[SYS_WRITE] = (handler) sys_write;
-  syscall_vec[SYS_HALT] = (handler) sys_halt;
-  syscall_vec[SYS_WAIT] = (handler) sys_wait;
-  syscall_vec[SYS_CREATE] = (handler) sys_create;
-  syscall_vec[SYS_REMOVE] = (handler) sys_remove;
-  syscall_vec[SYS_OPEN] = (handler) sys_open;
-  syscall_vec[SYS_EXEC] = (handler) sys_exec;
-  syscall_vec[SYS_CLOSE] = (handler) sys_close;
-  syscall_vec[SYS_TELL] = (handler) sys_tell;
-  syscall_vec[SYS_READ] = (handler) sys_read;
-  syscall_vec[SYS_SEEK] = (handler) sys_seek;
-  syscall_vec[SYS_FILESIZE] = (handler) sys_filesize;
+  syscall_assign();
   list_init(&files);
   lock_init(&lock);
   lock_init(&fid_lock);
 }
 
+//Can add more syscalls later
+//For now we have 13
+void
+syscall_assign(void)
+{
+  syscalls[SYS_EXIT] = (handler) sys_exit;
+  syscalls[SYS_WRITE] = (handler) sys_write;
+  syscalls[SYS_HALT] = (handler) sys_halt;
+  syscalls[SYS_WAIT] = (handler) sys_wait;
+  syscalls[SYS_CREATE] = (handler) sys_create;
+  syscalls[SYS_REMOVE] = (handler) sys_remove;
+  syscalls[SYS_OPEN] = (handler) sys_open;
+  syscalls[SYS_EXEC] = (handler) sys_exec;
+  syscalls[SYS_CLOSE] = (handler) sys_close;
+  syscalls[SYS_TELL] = (handler) sys_tell;
+  syscalls[SYS_READ] = (handler) sys_read;
+  syscalls[SYS_SEEK] = (handler) sys_seek;
+  syscalls[SYS_FILESIZE] = (handler) sys_filesize;
+}
 //duc
 //taken from allocate_tid, does the same thing
 //fid start from 2 instead. 0 and 1 taken
@@ -125,19 +134,18 @@ syscall_handler(struct intr_frame *f)
 {
   handler hndlr;
   int *syscall_no;
+  int ret;
   syscall_no = f->esp;
 
   //check for validity in all args and see if syscall cmd is in range
-  if (!valid_pointer(syscall_no)
-      || *syscall_no > SYS_INUMBER
-      || *syscall_no < SYS_HALT
-      || !valid_pointer(syscall_no + 1)
-      || !valid_pointer(syscall_no + 2)
-      || !valid_pointer(syscall_no + 3))
+  if (!valid_pointer(syscall_no) || *syscall_no > SYS_INUMBER
+      || *syscall_no < SYS_HALT || !valid_pointer(syscall_no + 1)
+      || !valid_pointer(syscall_no + 2) || !valid_pointer(syscall_no + 3))
     sys_exit(-1);
 
   //if all fine, do the shit
-  hndlr = syscall_vec[*syscall_no];
+  hndlr = syscalls[*syscall_no];
+
   f->eax = hndlr(*(syscall_no + 1), *(syscall_no + 2), *(syscall_no + 3));
 }
 

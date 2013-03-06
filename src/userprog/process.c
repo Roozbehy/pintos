@@ -48,9 +48,9 @@ process_execute(const char *file_name)
       tid = TID_ERROR;
       goto error;
     }
-
   length = strlcpy(fn_copy, file_name, PGSIZE);
 
+  //Check length limit
   if (length > COMMAND_LINE_LIMIT)
     {
       tid = TID_ERROR;
@@ -75,6 +75,7 @@ process_execute(const char *file_name)
   else
     {
       cur = thread_current();
+
       child = get_thread(tid);
       list_push_back(&cur->child_list, &child->child_elem);
       child->parent = cur;
@@ -102,6 +103,7 @@ start_process(void *file_name_)
   char **argv = palloc_get_page(0);
   int i;
   int j;
+  struct thread *cur = thread_current();
 
   //tokenising, take a look at the strtok_r example usage
   for (token = strtok_r(file_name, " ", &save_ptr); token != NULL; token =
@@ -117,26 +119,20 @@ start_process(void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  //Roozbeh
   success = load(argv[0], &if_.eip, &if_.esp);
-  struct thread *cur = thread_current();
 
   if (success)
     {
-      //Roozbeh
       char **argv_address = palloc_get_page(0);
 
       //first, set the string values
       //we will go down the stack, starting with the last argument
       for (i = argc - 1; i >= 0; i--)
         {
+          //need this cuz we dont know how long each arg is
           for (j = strlen(argv[i]); j >= 0; j--)
-            {
-              //moving the esp
-              (if_.esp -= 1);
-              //copying from **argv
-              *(char*) if_.esp = (argv[i][j]);
-            }
+            //copying from **argv
+            *(char*) (if_.esp -= 1) = *(argv[i]+j);
 
           //save the addresses to argv_address[], to be used below
           argv_address[i] = (char*) if_.esp;
@@ -144,28 +140,22 @@ start_process(void *file_name_)
 
       //word-alignment
       if_.esp -= ((if_.esp - if_.esp) & 4);
-      (if_.esp -= 4);
-      *(char**) if_.esp = NULL;
+      //Next is 0
+      *(char**) (if_.esp -= 4) = NULL;
 
       //next, set up the addresses
+      //now we can copy the address from argv_address[] created above
+      //to put it to the stack
       for (i = argc - 1; i >= 0; i--)
-        {
-          (if_.esp -= 4);
-          //now we can copy the address from argv_address[] created above
-          //to put it to the stack
-          *(char**) if_.esp = argv_address[i];
-        }
+        *(char**) (if_.esp -= 4) = argv_address[i];
 
       //save the address if the actual file name to addr
       char **addr = (char**) if_.esp;
 
       //finally, put the file name in, then the argc and a return address 0
-      if_.esp -= 4;
-      *(char***) if_.esp = addr;
-      if_.esp -= 4;
-      *(int*) if_.esp = argc;
-      if_.esp -= 4;
-      *(void**) if_.esp = 0;
+      *(char***) (if_.esp -= 4) = addr;
+      *(int*) (if_.esp -= 4) = argc;
+      *(void**) (if_.esp -= 4) = 0;
       palloc_free_page(argv_address);
     }
 
@@ -206,14 +196,14 @@ process_wait(tid_t child_tid)
 
   //-1 if child is NULL or not direct child or the child has already been
   //called wait()
-  if (child == NULL || child->already_waited
+  if (child == NULL || child->waited
       || child->parent != thread_current())
     return -1;
 
   //Set sema down for the child.
   //Wait for the child to finish
   sema_down(&child->wait);
-  child->already_waited = true;
+  child->waited = true;
   return child->ret;
 }
 
