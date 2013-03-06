@@ -99,16 +99,26 @@ struct thread
   // Roozbeh -- Change/Edit
   uint32_t *pagedir; /* Page directory. */
 
-  int ret; /* return status */
-  bool waited; /* true iff it has been waited before */
-  bool success; /* determines if the execution success or not */
-  struct semaphore wait; /* semaphore for process_wait() */
-  struct semaphore load_wait; /* semaphore for process_execute() */
-  struct list child_list; /* list of its child processes */
-  struct list_elem child_elem; /* list_elem for child_list*/
-  struct list opened_files; /* list of files that is opened by the process */
-  struct thread *parent; /* parent process of this process */
-  struct file *image_on_disk; /* executable file on the disk */
+  //thread's return status.
+  int ret;
+  //determines if this thread has waited before
+  bool waited;
+  //execution successful nor not
+  bool success;
+  //semaphore for process_wait()
+  struct semaphore wait;
+  //semaphore for child process
+  struct semaphore child_sema;
+  //child process list and elem
+  struct list child_list;
+  struct list_elem child_elem;
+  // parent process of this process
+  struct thread *parent;
+  //--------------------------------------
+  /* list of files that is opened by the process */
+  struct list opened_files;
+  /* executable file on the disk */
+  struct file *exe_file;
 #endif
 
   /* Owned by thread.c. */

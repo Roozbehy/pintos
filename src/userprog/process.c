@@ -82,7 +82,7 @@ process_execute(const char *file_name)
 
       /* Wait for load() finishing */
       //Wait for child to load
-      sema_down(&child->load_wait);
+      sema_down(&child->child_sema);
       if (!child->success)
         return TID_ERROR;
     }
@@ -160,7 +160,7 @@ start_process(void *file_name_)
     }
 
   //Child loaded, go back to process_execute
-  sema_up(&cur->load_wait);
+  sema_up(&cur->child_sema);
   cur->success = success;
 
   /* If load failed, quit. */
@@ -240,7 +240,7 @@ process_exit(void)
       pagedir_activate(NULL);
       pagedir_destroy(pd);
     }
-  file_close(cur->image_on_disk);
+  file_close(cur->exe_file);
   printf("%s: exit(%i)\n", cur->name, cur->ret);
 
   //Now that this has exited, go back to its parent
@@ -439,7 +439,7 @@ load(const char *file_name, void
   /* Start address. */
   *eip = (void
   (*)(void)) ehdr.e_entry;
-  file_deny_write(t->image_on_disk = file);
+  file_deny_write(t->exe_file = file);
   success = true;
   return success;
 
