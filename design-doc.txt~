@@ -21,7 +21,8 @@ Ningyuan Lu <nl1010@imperial.ac.uk>
 >> preparing your submission, other than the Pintos documentation, course
 >> text, lecture notes, and course staff.
 
-We refer to a few sources on creating the struct fd_elem, mostly by talking to friends
+We refer to a few sources on creating the struct fd_elem and implementing wait(),
+mostly by talking to friends.
 
                ARGUMENT PASSING
                ================
@@ -35,10 +36,6 @@ We refer to a few sources on creating the struct fd_elem, mostly by talking to f
 We defined
 //Max length of the command lines, including the filename and the args
 #define COMMAND_LINE_LIMIT 128
-
-//Max number of arguments allowed to be passed
-//For now we just put it as 64. May be changed if needed
-#define MAX_ARG 64
 
 
 ---- ALGORITHMS ----
@@ -64,8 +61,15 @@ Basically we followed the spec.
 
 ** To arrange the elems in the right order
 
+We created an array of string called argv. Whenever a token is created, we put it into the array.
+
 We start with the last arguments in the file name, then go down from there
 to the actual file name.
+
+For the args strings, we have to go through each arg and copy each char into the stack.
+We save the addresses of those into argv_address along the way.
+
+The addresses can then be copied into the lower stack, 4 bytes assgined to each.
 
 ** Avoiding overflowing
 
@@ -103,11 +107,11 @@ more than 1 line of commands
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
 In thread.h:
-  //return status
+  //return status for a thread
   int ret;
 
-  //true iff it has been waited before
-  bool already_waited; 
+  //true iff this thread has waited before
+  bool waited; 
 
   //determines if the execution success or not
   bool success; 
@@ -116,7 +120,8 @@ In thread.h:
   struct semaphore wait; 
 
   //semaphore for process_execute()
-  struct semaphore load_wait; 
+  //used for waiting the child thread to load
+  struct semaphore child_sema; 
 
   //list of its child processes
   struct list child_list; 
@@ -130,20 +135,19 @@ In thread.h:
   //parent process of this process
   struct thread *parent; 
 
-  //executable file on the disk
-  struct file *image_on_disk; 
+  //the file that is opened
+  struct file *exe_file
 
   //Helper functions for task 2.
   //Get thread from its tid
+  //Get child thread from the current thread's child_list if child_only is true
   struct thread *
-  get_thread(tid_t tid);
+  get_thread(bool child_only, tid_t tid);
 
-  //get thread from the provided list and a tid.
-  //used to get a child thread from a child_list
-  struct thread *
-  get_child_thread(struct list *l, tid_t tid);
+In thread.c:
+  We modified thread_schedule_tail(), which helps implementing synchronisation for wait()
 
-In syscall.c:
+In syscall:
   We added all the syscalls that is in the spec: sys_exit, sys_write etc. Total of 13
 
   //handler for syscall
@@ -163,11 +167,10 @@ In syscall.c:
   static int
   allocate_fid(void)
 
-  //Check validity of a pointer, address etc
+  //Check validity of a pointer
   static bool
   valid_pointer(const void *vaddr)
 
-In syscall.h:
   //This struct represent an elem for a file, which will be used in creating a file list
   //for a process
   //Contains the file ptr, a file descriptor, its list_elem and its thread elem
@@ -193,7 +196,9 @@ So file descriptor is not unique within the entire OS, just within a single proc
 >> B3: Describe your code for reading and writing user data from the
 >> kernel.
 
-First of all, both write and read will be wrapped inside a lock.
+First of all, both write and read will be wrapped inside a lock, to avoid
+interruptions.
+
 Then we check the address, see if it's valid, by using valid_pointer.
 If no problem found, we proceeded to check what pointer that represent,
 a STDOUT or a STDIN or an address to another file, and go on accordingly.

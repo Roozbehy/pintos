@@ -258,35 +258,6 @@ sys_read(int fd, void *buffer, unsigned size)
       lock_release(&lock);
       sys_exit(-1);
     }
-
-  /*if (valid_pointer(buffer + size))
-   {
-   if (fd == STDOUT_FILENO)
-   goto done;
-   else if (fd == STDIN_FILENO)
-   {
-   int i;
-   for (i = 0; i < size; i++)
-   *(uint8_t *) (buffer + i) = input_getc();
-   result = size;
-   goto done;
-   }
-   else
-   {
-   struct file* f = find_file(fd);
-   if (f == NULL)
-   goto done;
-   result = file_read(f, buffer, size);
-   }
-   }
-   else
-   {
-   lock_release(&lock);
-   sys_exit(-1);
-   }
-
-   done: lock_release(&lock);
-   return result;*/
 }
 
 static void
