@@ -585,19 +585,13 @@ thread_schedule_tail(struct thread *prev)
       //If the parent is alive,...
       if (prev->parent != NULL && !thread_dying(prev->parent))
         {
-          struct thread *child;
-          struct child_elem *e;
           //...we go through this thread's child_list...
           struct list *l = &prev->child_list;
-          //TODO
-          //CHANGE WHILE INTO FOR LOOP
-          for (e = list_begin (&all_list); e != list_end (&all_list);
-                 e = list_next (e))
-              {
-
-          while (!list_empty(l))
+          struct list_elem *e;
+          for (e = list_begin(l); e != list_end(l); e =
+              list_next(e))
             {
-              child = list_entry (list_pop_front (l), struct thread, child_elem);
+              struct thread *child = list_entry(e, struct thread, allelem);
               //...see if the child is alive or not
               if (!thread_dying(child))
                 //set its parent to NULL, no need to assign another parent
@@ -608,9 +602,6 @@ thread_schedule_tail(struct thread *prev)
                 //now that this guy is going to die anyways
                 palloc_free_page(child);
             }
-          //Now the thread's dead children has been freed, but
-          //the thread itself has not, so its parent can still retrieve it later
-          //when it calls wait(), and it will be freed after its parent is dead
         }
       //We only free it when it has no parent, or its parent is dead
       else
@@ -660,54 +651,40 @@ allocate_tid(void)
 
   return tid;
 }
-
+
 /* Offset of `stack' member within `struct thread'.
  Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
 //Helper functions for task 2
-//Roozbeh do it plzzzzzz
 struct thread *
-get_thread(tid_t tid)
+get_thread(bool child_only, tid_t tid)
 {
   if (tid == TID_ERROR)
     return NULL;
 
   struct list_elem *e;
-  struct thread *t, *ret;
+  struct list *l;
+  struct thread *t;
   enum intr_level old_level = intr_disable();
 
-  ret = NULL;
-  for (e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e))
-    {
-      t = list_entry (e, struct thread, allelem);
-      if (t->tid == tid)
-        {
-          ret = t;
-          break;
-        }
-    }
-  intr_set_level(old_level);
-  return ret;
-}
-
-//find thread in given list and tid
-struct thread *
-get_child_thread(struct list *l, tid_t tid)
-{
-  if (tid == TID_ERROR)
-    return NULL;
-
-  struct list_elem *e;
-  struct thread *t;
-
-  ASSERT(l != NULL);
+  if (child_only)
+    l = &(thread_current()->child_list);
+  else
+    l = &all_list;
 
   for (e = list_begin(l); e != list_end(l); e = list_next(e))
     {
-      t = list_entry (e, struct thread, child_elem);
+      if (child_only)
+        t = list_entry (e, struct thread, child_elem);
+      else
+        t = list_entry (e, struct thread, allelem);
       if (t->tid == tid)
-        return t;
+        {
+          intr_set_level(old_level);
+          return t;
+        }
     }
   return NULL;
 }
+

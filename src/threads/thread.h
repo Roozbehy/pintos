@@ -109,8 +109,9 @@ struct thread
   struct semaphore wait;
   //semaphore for child process
   struct semaphore child_sema;
-  //child process list and elem
+  //child process list
   struct list child_list;
+  //TODO can be removed
   struct list_elem child_elem;
   // parent process of this process
   struct thread *parent;
@@ -184,11 +185,9 @@ thread_get_load_avg(void);
 
 //Helper functions for task 2.
 //Get thread from its tid
+//bool param is for determining if we need a child or not
 struct thread *
-get_thread(tid_t tid);
-//get thread from the provided list and a tid.
-//used to get a child thread from a child_list
-struct thread *
-get_child_thread(struct list *l, tid_t tid);
+get_thread(bool child_only, tid_t tid);
+
 
 #endif /* threads/thread.h */

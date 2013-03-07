@@ -76,7 +76,7 @@ process_execute(const char *file_name)
     {
       cur = thread_current();
 
-      child = get_thread(tid);
+      child = get_thread(false, tid);
       list_push_back(&cur->child_list, &child->child_elem);
       child->parent = cur;
 
@@ -192,7 +192,7 @@ int
 process_wait(tid_t child_tid)
 {
   struct thread *child;
-  child = get_child_thread(&thread_current()->child_list, child_tid);
+  child = get_thread(true, child_tid);
 
   //-1 if child is NULL or not direct child or the child has already been
   //called wait()
