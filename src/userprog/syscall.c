@@ -1,72 +1,4 @@
 #include "userprog/syscall.h"
-#include <stdio.h>
-#include <syscall-nr.h>
-#include "threads/interrupt.h"
-#include "threads/thread.h"
-#include "threads/vaddr.h"
-#include "threads/malloc.h"
-#include "threads/palloc.h"
-#include "filesys/file.h"
-#include "filesys/filesys.h"
-#include "userprog/process.h"
-#include <list.h>
-#include "lib/user/syscall.h"
-
-static void
-syscall_handler(struct intr_frame *);
-static bool
-valid_pointer(const void *vaddr);
-static int
-allocate_fid(void);
-typedef int
-(*handler)(uint32_t, uint32_t, uint32_t);
-#define SYSCALL_NUM 50
-static handler syscalls[SYSCALL_NUM];
-static struct lock lock;
-static struct lock fid_lock;
-static struct list files;
-void
-syscall_assign(void);
-
-//syscalls
-static void
-sys_exit(int status);
-
-static int
-sys_write(int fd, const void *buffer, unsigned length);
-
-static void
-sys_halt(void);
-
-static int
-sys_wait(tid_t pid);
-
-static bool
-sys_create(const char *file, unsigned initial_size);
-
-static bool
-sys_remove(const char *file);
-
-static int
-sys_open(const char *file);
-
-static pid_t
-sys_exec(const char *cmd);
-
-static void
-sys_close(int fd);
-
-static unsigned
-sys_tell(int fd);
-
-static int
-sys_read(int fd, void *buffer, unsigned size);
-
-static void
-sys_seek(int fd, unsigned pos);
-
-static int
-sys_filesize(int fd);
 
 //find a file by its fd from the file_list of a process
 static struct file *
@@ -81,6 +13,14 @@ find_file(int fd)
         return ret->file;
     }
   return NULL;
+}
+
+//Check validity of a pointer, address etc
+static bool
+valid_pointer(const void *vaddr)
+{
+  return is_user_vaddr(vaddr)
+      && pagedir_get_page(thread_current()->pagedir, vaddr) != NULL;
 }
 
 void
@@ -143,7 +83,6 @@ syscall_handler(struct intr_frame *f)
       || !valid_pointer(syscall_no + 2) || !valid_pointer(syscall_no + 3))
     sys_exit(-1);
 
-  //if all fine, do the shit
   hndlr = syscalls[*syscall_no];
 
   f->eax = hndlr(*(syscall_no + 1), *(syscall_no + 2), *(syscall_no + 3));
@@ -161,21 +100,26 @@ static int
 sys_write(int fd, const void *buffer, unsigned length)
 {
   int result = -1;
-  //need lock for the test
+  //need lock here
   lock_acquire(&lock);
-
-  if (valid_pointer(buffer) && valid_pointer(buffer + length))
+  struct file* f;
+  if (valid_pointer(buffer + length))
     {
-      if (fd == STDOUT_FILENO)
-        putbuf(buffer, length);
-      else if (fd == STDIN_FILENO)
-        goto done;
-      else
+      switch (fd)
         {
-          struct file* f = find_file(fd);
-          if (f == NULL)
-            goto done;
+      case STDOUT_FILENO:
+        putbuf(buffer, length);
+        lock_release(&lock);
+        return result;
+      case STDIN_FILENO:
+        lock_release(&lock);
+        return result;
+      default:
+        f = find_file(fd);
+        if (f != NULL)
           result = file_write(f, buffer, length);
+        lock_release(&lock);
+        return result;
         }
     }
   else
@@ -183,9 +127,6 @@ sys_write(int fd, const void *buffer, unsigned length)
       lock_release(&lock);
       sys_exit(-1);
     }
-
-  done: lock_release(&lock);
-  return result;
 }
 
 static void
@@ -221,25 +162,23 @@ sys_remove(const char *file)
 static int
 sys_open(const char *file)
 {
-  struct file *f;
-  struct fd_elem *e;
-
   if (!valid_pointer(file))
     sys_exit(-1);
-  f = filesys_open(file);
+  struct file *f = filesys_open(file);
   if (f == NULL)
     return -1;
-  e = (struct fd_elem *) malloc(sizeof(struct fd_elem));
-  if (e == NULL)
+  size_t size = sizeof(struct fd_elem);
+  struct fd_elem *elm = (struct fd_elem *) malloc(size);
+  if (elm == NULL)
     {
       file_close(f);
       return -1;
     }
-  e->file = f;
-  e->fd = allocate_fid();
-  list_push_back(&files, &e->elem);
-  list_push_back(&thread_current()->opened_files, &e->thread_elem);
-  return e->fd;
+  elm->file = f;
+  elm->fd = allocate_fid();
+  list_push_back(&files, &elm->elem);
+  list_push_back(&thread_current()->opened_files, &elm->thread_elem);
+  return elm->fd;
 }
 
 static pid_t
@@ -289,26 +228,29 @@ static int
 sys_read(int fd, void *buffer, unsigned size)
 {
   int result = -1;
+  int i;
   lock_acquire(&lock);
 
-  if (valid_pointer(buffer) && valid_pointer(buffer + size))
+  struct file* f;
+  if (valid_pointer(buffer + size))
     {
-      if (fd == STDOUT_FILENO)
-        goto done;
-      else if (fd == STDIN_FILENO)
+      switch (fd)
         {
-          int i;
-          for (i = 0; i < size; i++)
-            *(uint8_t *) (buffer + i) = input_getc();
-          result = size;
-          goto done;
-        }
-      else
-        {
-          struct file* f = find_file(fd);
-          if (f == NULL)
-            goto done;
+      case STDOUT_FILENO:
+        lock_release(&lock);
+        return result;
+      case STDIN_FILENO:
+        for (i = 0; i < size; i++)
+          *(uint8_t *) (buffer + i) = input_getc();
+        result = size;
+        lock_release(&lock);
+        return result;
+      default:
+        f = find_file(fd);
+        if (f != NULL)
           result = file_read(f, buffer, size);
+        lock_release(&lock);
+        return result;
         }
     }
   else
@@ -317,8 +259,34 @@ sys_read(int fd, void *buffer, unsigned size)
       sys_exit(-1);
     }
 
-  done: lock_release(&lock);
-  return result;
+  /*if (valid_pointer(buffer + size))
+   {
+   if (fd == STDOUT_FILENO)
+   goto done;
+   else if (fd == STDIN_FILENO)
+   {
+   int i;
+   for (i = 0; i < size; i++)
+   *(uint8_t *) (buffer + i) = input_getc();
+   result = size;
+   goto done;
+   }
+   else
+   {
+   struct file* f = find_file(fd);
+   if (f == NULL)
+   goto done;
+   result = file_read(f, buffer, size);
+   }
+   }
+   else
+   {
+   lock_release(&lock);
+   sys_exit(-1);
+   }
+
+   done: lock_release(&lock);
+   return result;*/
 }
 
 static void
@@ -340,13 +308,5 @@ sys_filesize(int fd)
   if (f == NULL)
     return -1;
   return (int) file_length(f);
-}
-
-//Check validity of a pointer, address etc
-static bool
-valid_pointer(const void *vaddr)
-{
-  return is_user_vaddr(vaddr)
-      && pagedir_get_page(thread_current()->pagedir, vaddr) != NULL;
 }
 
